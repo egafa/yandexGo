@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
@@ -31,7 +32,7 @@ func main() {
 	})
 
 	r.Route("/update", func(r chi.Router) {
-		r.Get("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi)
+		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi)
 	})
 
 	r.Route("/value", func(r chi.Router) {
@@ -47,7 +48,7 @@ func main() {
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-sigint
 
 		// We received an interrupt signal, shut down.

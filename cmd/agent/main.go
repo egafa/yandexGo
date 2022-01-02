@@ -86,7 +86,7 @@ func sendMetric(ctx context.Context, dataChannel chan string, stopchanel chan in
 		select {
 		case textReq = <-dataChannel:
 			{
-				req, _ := http.NewRequest(http.MethodGet, textReq, nil)
+				req, _ := http.NewRequest(http.MethodPost, textReq, nil)
 				resp, err := client.Do(req)
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", req.URL)
@@ -159,7 +159,7 @@ func main() {
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until a signal is received.
 
 	<-c
