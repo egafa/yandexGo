@@ -88,7 +88,9 @@ func ValueMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 		val, ok := m.GetGaugeVal(nameMetric)
 		if ok {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
+			//w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
+			w.Write([]byte(fmt.Sprintf("%v", val)))
+
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не найдена метрика", http.StatusNotFound)
@@ -101,7 +103,8 @@ func ValueMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 		val, ok := m.GetCounterVal(nameMetric, -1)
 		if ok {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
+			w.Write([]byte(fmt.Sprintf("%v", val)))
+			//w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не найдена метрика", http.StatusNotFound)
