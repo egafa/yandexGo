@@ -78,7 +78,6 @@ func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 
 func ValueMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 	var m model.MapMetric
-	var nilerror *error = nil
 
 	typeMetric := chi.URLParam(r, "typeMetric")
 	nameMetric := chi.URLParam(r, "nammeMetric")
@@ -86,23 +85,26 @@ func ValueMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 	m = model.GetMapMetricVal()
 
 	if typeMetric == "gauge" {
-		val, err := m.GetGaugeVal(nameMetric)
-		if &err != nilerror {
+		val, ok := m.GetGaugeVal(nameMetric)
+		if ok {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
 		} else {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
 
 	}
 
 	if typeMetric == "counter" {
 
-		val, err := m.GetCounterVal(nameMetric, -1)
-		if &err != nilerror {
+		val, ok := m.GetCounterVal(nameMetric, -1)
+		if ok {
+			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
 		} else {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
 
 	}
@@ -136,4 +138,5 @@ func ListMetricsChi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 }

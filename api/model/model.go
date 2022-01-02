@@ -1,9 +1,5 @@
 package model
 
-import (
-	"errors"
-)
-
 type Metric interface {
 	SaveGaugeVal(nameMetric string, value float64)
 	GetGaugeVal(nameMetric string) float64
@@ -41,12 +37,12 @@ func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
 }
 
-func (m MapMetric) GetGaugeVal(nameMetric string) (float64, error) {
+func (m MapMetric) GetGaugeVal(nameMetric string) (float64, bool) {
 	res, ok := m.GaugeData[nameMetric]
 	if ok {
-		return res, nil
+		return res, true
 	} else {
-		return 0, errors.New("Не найдена метрика")
+		return 0, false
 	}
 
 }
@@ -63,14 +59,14 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 	m.CounterData[nameMetric] = v
 }
 
-func (m MapMetric) GetCounterVal(nameMetric string, num int64) (int64, error) {
+func (m MapMetric) GetCounterVal(nameMetric string, num int64) (int64, bool) {
 	var v []int64
 
 	v, ok := m.CounterData[nameMetric]
 	if ok {
-		return v[len(v)-1], nil
+		return v[len(v)-1], true
 	} else {
-		return 0, errors.New("Не найдена метрика")
+		return 0, false
 	}
 }
 
