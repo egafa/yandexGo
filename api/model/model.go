@@ -51,11 +51,10 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 
 	v, ok := m.CounterData[nameMetric]
 	if ok {
-		m.CounterData[nameMetric] = m.CounterData[nameMetric] + value
+		m.CounterData[nameMetric] = v + value
+	} else {
+		m.CounterData[nameMetric] = 0
 	}
-
-	v = append(v, value)
-	m.CounterData[nameMetric] = v
 }
 
 func (m MapMetric) GetCounterVal(nameMetric string, num int64) (int64, bool) {
