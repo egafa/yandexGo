@@ -9,7 +9,7 @@ type Metric interface {
 
 type MapMetric struct {
 	GaugeData   map[string]float64
-	CounterData map[string][]int64
+	CounterData map[string]int64
 }
 
 type GaugeTemplateMetric struct {
@@ -30,7 +30,7 @@ func GetMapMetricVal() MapMetric {
 func InitMapMetricVal() {
 	MapMetricVal = MapMetric{}
 	MapMetricVal.GaugeData = make(map[string]float64)
-	MapMetricVal.CounterData = make(map[string][]int64)
+	MapMetricVal.CounterData = make(map[string]int64)
 }
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
@@ -48,11 +48,10 @@ func (m MapMetric) GetGaugeVal(nameMetric string) (float64, bool) {
 }
 
 func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
-	var v []int64
 
 	v, ok := m.CounterData[nameMetric]
 	if ok {
-		m.CounterData[nameMetric] = append(m.CounterData[nameMetric], value)
+		m.CounterData[nameMetric] = m.CounterData[nameMetric] + value
 	}
 
 	v = append(v, value)
@@ -60,11 +59,10 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 }
 
 func (m MapMetric) GetCounterVal(nameMetric string, num int64) (int64, bool) {
-	var v []int64
 
 	v, ok := m.CounterData[nameMetric]
 	if ok {
-		return v[len(v)-1], true
+		return v, true
 	} else {
 		return 0, false
 	}
@@ -89,9 +87,7 @@ func (m MapMetric) GetCounterMetricTemplate() CounterTemplateMetric {
 	res.Data = make(map[string]int64)
 	res.Typemetric = "Counter"
 
-	for name, v := range m.CounterData {
-		res.Data[name] = v[len(v)-1]
-	}
+	res.Data = m.CounterData
 
 	return res
 }
