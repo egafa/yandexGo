@@ -58,31 +58,39 @@ func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 
 	m = model.GetMapMetricVal()
 
+	if typeMetric != "gauge" && typeMetric != "counter" {
+		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
+		return
+	}
+
 	if typeMetric == "gauge" {
 		f, err := strconv.ParseFloat(valueMetric, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			http.Error(w, "Не найдена метрика", http.StatusNotFound)
-		}
-		m.SaveGaugeVal(nameMetric, f)
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("application-type", "text/plain")
-		w.Write([]byte(valueMetric))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			return
+		}
+
+		m.SaveGaugeVal(nameMetric, f)
 	}
 
 	if typeMetric == "counter" {
 		i, err := strconv.ParseInt(valueMetric, 10, 64)
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-			http.Error(w, "Не найдена метрика", http.StatusNotFound)
-		}
-		m.SaveCounterVal(nameMetric, i)
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("application-type", "text/plain")
-		w.Write([]byte(valueMetric))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			return
+		}
+
+		m.SaveCounterVal(nameMetric, i)
 	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("application-type", "text/plain")
+	w.Write([]byte(valueMetric))
 
 }
 
