@@ -25,7 +25,6 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 	addrServer := cfg.addrServer
 
-	pollCount := 0
 	for { //i := 0; i < 3; i++ {
 
 		select {
@@ -49,8 +48,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 					dataChannel <- addr
 
 				}
-				pollCount++
-				addr := addrServer + "/update/counter/PollCount/" + fmt.Sprintf("%v", pollCount)
+				addr := addrServer + "/update/counter/PollCount/1"
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", addr)
 				}

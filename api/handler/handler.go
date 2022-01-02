@@ -61,17 +61,27 @@ func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 	if typeMetric == "gauge" {
 		f, err := strconv.ParseFloat(valueMetric, 64)
 		if err != nil {
-			m.SaveGaugeVal(nameMetric, 0)
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
 		m.SaveGaugeVal(nameMetric, f)
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("application-type", "text/plain")
+		w.Write([]byte(valueMetric))
 	}
 
 	if typeMetric == "counter" {
 		i, err := strconv.ParseInt(valueMetric, 10, 64)
 		if err != nil {
-			m.SaveCounterVal(nameMetric, 0)
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
 		m.SaveCounterVal(nameMetric, i)
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("application-type", "text/plain")
+		w.Write([]byte(valueMetric))
 	}
 
 }
