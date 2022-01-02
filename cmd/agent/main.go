@@ -131,8 +131,10 @@ func main() {
 	namesMetric := make(map[string]string)
 
 	for i := 0; i < v.NumField(); i++ {
-		typeNаme := fmt.Sprintf("%s", reflect.TypeOf(v.Field(i).Interface()))
-		strNаme := fmt.Sprintf("%s", typeOfS.Field(i).Name)
+		//typeNаme := fmt.Sprintf("%s", reflect.TypeOf(v.Field(i).Interface()))
+		//strNаme := fmt.Sprintf("%s", typeOfS.Field(i).Name)
+		typeNаme := reflect.TypeOf(v.Field(i).Interface()).String()
+		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
 		case "uint64":
 			namesMetric[strNаme] = "counter" //append(namesMetric[strNаme], "counter")
