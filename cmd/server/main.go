@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/signal"
 
-	handler "github.com/egafa/ytest/api/handler"
-	model "github.com/egafa/ytest/api/model"
+	handler "github.com/egafa/yandexGo/api/handler"
+	model "github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

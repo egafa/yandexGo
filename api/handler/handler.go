@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/egafa/ytest/api/model"
+	"github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
 )
 
