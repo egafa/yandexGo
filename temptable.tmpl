@@ -1,0 +1,17 @@
+<p>Тип метриики: {{.Typemetric}} </p>
+<table class="demoTable" style="height: 54px;">
+<thead>
+<tr>
+<td><span style="color: #c82828;">Метрика</td>
+<td><span style="color: #c82828;">Значение метрики</td>
+</tr>
+</thead>
+<tbody>
+{{ range $key, $val := .Data }}
+<tr>
+<td>{{ $key }}</td>
+<td>{{ $val }}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
