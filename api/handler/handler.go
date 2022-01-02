@@ -58,13 +58,13 @@ func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 
 	m = model.GetMapMetricVal()
 
-	if typeMetric != "gauge" && typeMetric != "counter" {
-		w.WriteHeader(http.StatusBadRequest)
-		http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
+	if strings.ToLower(typeMetric) != "gauge" && strings.ToLower(typeMetric) != "counter" {
+		w.WriteHeader(http.StatusNotImplemented)
+		http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 		return
 	}
 
-	if typeMetric == "gauge" {
+	if strings.ToLower(typeMetric) == "gauge" {
 		f, err := strconv.ParseFloat(valueMetric, 64)
 
 		if err != nil {
@@ -76,7 +76,7 @@ func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
 		m.SaveGaugeVal(nameMetric, f)
 	}
 
-	if typeMetric == "counter" {
+	if strings.ToLower(typeMetric) == "counter" {
 		i, err := strconv.ParseInt(valueMetric, 10, 64)
 
 		if err != nil {
