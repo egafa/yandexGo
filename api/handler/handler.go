@@ -50,13 +50,13 @@ func MetricHandler(m model.Metric) http.HandlerFunc {
 }
 
 func UpdateMetricHandlerChi(w http.ResponseWriter, r *http.Request) {
-	var m model.MapMetric
+	//var m model.MapMetric
 
 	typeMetric := chi.URLParam(r, "typeMetric")
 	nameMetric := chi.URLParam(r, "nammeMetric")
 	valueMetric := chi.URLParam(r, "valueMetric")
 
-	m = model.GetMapMetricVal()
+	m := model.GetMapMetricVal()
 
 	if strings.ToLower(typeMetric) != "gauge" && strings.ToLower(typeMetric) != "counter" {
 		w.WriteHeader(http.StatusNotImplemented)
