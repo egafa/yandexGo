@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,10 +37,15 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
+			r := chi.NewRouter()
+			r.Route("/update", func(r chi.Router) {
+				r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", UpdateMetricHandlerChi(model.GetMetricVal()))
+			})
+
 			request := httptest.NewRequest(http.MethodPost, tt.request, nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(UpdateMetricHandlerChi)
-			h.ServeHTTP(w, request)
+
+			r.ServeHTTP(w, request)
 			result := w.Result()
 
 			assert.Equal(t, tt.want.statusCode, result.StatusCode)
@@ -49,7 +55,7 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 			err = result.Body.Close()
 			require.NoError(t, err)
 
-			assert.Equal(t, tt.want.response, response)
+			assert.Equal(t, tt.want.response, string(response))
 
 		})
 	}

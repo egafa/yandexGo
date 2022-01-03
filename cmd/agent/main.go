@@ -137,15 +137,14 @@ func main() {
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
 		case "uint64":
-			namesMetric[strNаme] = "counter" //append(namesMetric[strNаme], "counter")
+			namesMetric[strNаme] = "counter"
 		case "float64":
-			namesMetric[strNаme] = "gauge" //append(namesMetric[strNаme], "gauge")
+			namesMetric[strNаme] = "gauge"
 		default:
 			continue
 		}
 
 	}
-	//fmt.Println(names1)
 
 	ctx, cancel := context.WithCancel(context.Background())
 

@@ -19,6 +19,7 @@ func main() {
 	addr := "127.0.0.1:8080"
 
 	model.InitMapMetricVal()
+	m := model.GetMetricVal()
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -27,15 +28,15 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", handler.ListMetricsChi)
+		r.Get("/", handler.ListMetricsChiHandleFunc(m))
 	})
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi)
+		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(m))
 	})
 
 	r.Route("/value", func(r chi.Router) {
-		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi)
+		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
 	})
 
 	srv := &http.Server{

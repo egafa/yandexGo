@@ -2,9 +2,11 @@ package model
 
 type Metric interface {
 	SaveGaugeVal(nameMetric string, value float64)
-	GetGaugeVal(nameMetric string) float64
+	GetGaugeVal(nameMetric string) (float64, bool)
 	SaveCounterVal(nameMetric string, value int64)
-	GetCounterVal(nameMetric string, num int64) int64
+	GetCounterVal(nameMetric string, num int64) (int64, bool)
+	GetGaugetMetricTemplate() GaugeTemplateMetric
+	GetCounterMetricTemplate() CounterTemplateMetric
 }
 
 type MapMetric struct {
@@ -21,16 +23,17 @@ type CounterTemplateMetric struct {
 	Data       map[string]int64
 }
 
-var MapMetricVal MapMetric
+var MetricVal Metric
 
-func GetMapMetricVal() MapMetric {
-	return MapMetricVal
+func GetMetricVal() Metric {
+	return MetricVal
 }
 
 func InitMapMetricVal() {
-	MapMetricVal = MapMetric{}
-	MapMetricVal.GaugeData = make(map[string]float64)
-	MapMetricVal.CounterData = make(map[string]int64)
+	mapMetricVal := MapMetric{}
+	mapMetricVal.GaugeData = make(map[string]float64)
+	mapMetricVal.CounterData = make(map[string]int64)
+	MetricVal = mapMetricVal
 }
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
