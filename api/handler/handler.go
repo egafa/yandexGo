@@ -95,6 +95,60 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		if r.Header.Get("Content-Type") == "application/json" {
+
+			body, bodyErr := ioutil.ReadAll(r.Body)
+			if bodyErr != nil {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			dataMetrics := model.Metrics{}
+			jsonErr := json.Unmarshal(body, &dataMetrics)
+			if jsonErr != nil {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			if strings.ToLower(dataMetrics.MType) != "gauge" && strings.ToLower(dataMetrics.MType) != "counter" {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			if strings.ToLower(dataMetrics.MType) == "gauge" {
+				val, ok := m.GetGaugeVal(dataMetrics.ID)
+				if ok {
+
+					dataMetrics.Value = &val
+					byt, err := json.Marshal(m)
+					if err != nil {
+						w.WriteHeader(http.StatusNotImplemented)
+						http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+						return
+					}
+
+					w.Header().Set("Content-Type", "application/json")
+					w.Write(byt)
+					w.WriteHeader(http.StatusOK)
+
+				} else {
+					w.WriteHeader(http.StatusNotFound)
+					http.Error(w, "Не найдена метрика", http.StatusNotFound)
+				}
+			}
+			if strings.ToLower(dataMetrics.MType) == "counter" {
+				//m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+			}
+
+			w.WriteHeader(http.StatusOK)
+
+			return
+
+		}
+
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
 

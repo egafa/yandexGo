@@ -37,6 +37,7 @@ func main() {
 
 	r.Route("/value", func(r chi.Router) {
 		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
+		r.Post("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
 	})
 
 	srv := &http.Server{
