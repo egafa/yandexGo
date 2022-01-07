@@ -67,6 +67,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					req, _ := http.NewRequest(http.MethodPost, addr, bytes.NewBuffer(byt))
 					req.Header.Set("Content-Type", "application/json")
+					req.Body.Close()
 
 					if cfg.log {
 						infoLog.Printf("Request text: %s\n", addr+string(byt))

@@ -123,7 +123,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				if ok {
 
 					dataMetrics.Value = &val
-					byt, err := json.Marshal(m)
+					byt, err := json.Marshal(dataMetrics)
 					if err != nil {
 						w.WriteHeader(http.StatusNotImplemented)
 						http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
@@ -134,9 +134,12 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 					w.Write(byt)
 					w.WriteHeader(http.StatusOK)
 
+					return
+
 				} else {
 					w.WriteHeader(http.StatusNotFound)
 					http.Error(w, "Не найдена метрика", http.StatusNotFound)
+					return
 				}
 			}
 			if strings.ToLower(dataMetrics.MType) == "counter" {
