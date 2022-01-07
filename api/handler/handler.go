@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,6 +19,42 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
 		valueMetric := chi.URLParam(r, "valueMetric")
+
+		if r.Header.Get("Content-Type") == "application/json" {
+
+			body, bodyErr := ioutil.ReadAll(r.Body)
+			if bodyErr != nil {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			dataMetrics := model.Metrics{}
+			jsonErr := json.Unmarshal(body, &dataMetrics)
+			if jsonErr != nil {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			if strings.ToLower(dataMetrics.MType) != "gauge" && strings.ToLower(dataMetrics.MType) != "counter" {
+				w.WriteHeader(http.StatusNotImplemented)
+				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				return
+			}
+
+			if strings.ToLower(dataMetrics.MType) == "gauge" {
+				m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
+			}
+			if strings.ToLower(dataMetrics.MType) == "counter" {
+				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+			}
+
+			w.WriteHeader(http.StatusOK)
+
+			return
+
+		}
 
 		if strings.ToLower(typeMetric) != "gauge" && strings.ToLower(typeMetric) != "counter" {
 			w.WriteHeader(http.StatusNotImplemented)

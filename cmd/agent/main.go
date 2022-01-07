@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -10,11 +11,17 @@ import (
 	"os/signal"
 	"reflect"
 	"runtime"
+	"strconv"
 	"syscall"
 	"time"
+
+	"encoding/json"
+
+	"github.com/egafa/yandexGo/api/model"
 )
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan string) {
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
+	var m model.Metrics
 
 	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -41,24 +48,44 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					val := v.FieldByName(key).Interface()
 
-					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
-					if cfg.log {
-						infoLog.Printf("Request text: %s\n", addr)
+					m.ID = key
+					m.MType = typeNаme
+					if typeNаme == "gauge" {
+						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
+						m.Value = &f
+					} else {
+						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
+						m.Delta = &i
 					}
-					dataChannel <- addr
+
+					byt, err := json.Marshal(m)
+					if err != nil {
+						continue
+					}
+
+					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
+
+					req, _ := http.NewRequest(http.MethodPost, addr, bytes.NewBuffer(byt))
+					req.Header.Set("Content-Type", "application/json")
+
+					if cfg.log {
+						infoLog.Printf("Request text: %s\n", addr+string(byt))
+					}
+					//dataChannel <- addr
+					dataChannel <- req
 
 				}
 				addr := addrServer + "/update/counter/PollCount/1"
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", addr)
 				}
-				dataChannel <- addr
+				//dataChannel <- addr
 
 				addr1 := addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
 				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
+					infoLog.Printf("Request text: %s\n", addr1)
 				}
-				dataChannel <- addr1
+				//dataChannel <- addr1
 
 				time.Sleep(time.Duration(cfg.intervalMetric) * time.Second)
 			}
@@ -66,8 +93,10 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan string, stopchanel chan int, cfg cfg) {
-	var textReq string
+func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel chan int, cfg cfg) {
+	var textReq *http.Request
+	//var m model.Metrics
+
 	f, err := os.OpenFile("textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
@@ -84,10 +113,13 @@ func sendMetric(ctx context.Context, dataChannel chan string, stopchanel chan in
 		select {
 		case textReq = <-dataChannel:
 			{
-				req, _ := http.NewRequest(http.MethodPost, textReq, nil)
-				resp, err := client.Do(req)
+				//req, _ := http.NewRequest(http.MethodPost, textReq, nil)
+				//req.Header.Add("Content-Type", "application/json")
+				//resp, err := client.Do(req)
+
+				resp, err := client.Do(textReq)
 				if cfg.log {
-					infoLog.Printf("Request text: %s\n", req.URL)
+					infoLog.Printf("Request text: %s\n", textReq.URL)
 				}
 
 				if err != nil {
@@ -148,7 +180,9 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	dataChannel := make(chan string, len(namesMetric)*100)
+	//dataChannel := make(chan string, len(namesMetric)*100)
+	dataChannel := make(chan *http.Request, len(namesMetric)*100)
+
 	stopchanel := make(chan int, 1)
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
