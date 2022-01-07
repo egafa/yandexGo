@@ -20,8 +20,25 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 )
 
+func newRequest(m interface{}, addr, method string, log bool, infoLog *log.Logger) (*http.Request, error) {
+	byt, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+
+	req, _ := http.NewRequest(method, addr, bytes.NewBuffer(byt))
+	req.Header.Set("Content-Type", "application/json")
+	req.Body.Close()
+
+	if log {
+		infoLog.Printf("Request text: %s\n", addr+string(byt))
+	}
+
+	return req, nil
+}
+
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
-	var m model.Metrics
+	//var m model.Metrics
 
 	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -48,6 +65,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					val := v.FieldByName(key).Interface()
 
+					m := model.Metrics{}
 					m.ID = key
 					m.MType = typeNаme
 					if typeNаme == "gauge" {
@@ -56,37 +74,41 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 					} else {
 						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
 						m.Delta = &i
-					}
-
-					byt, err := json.Marshal(m)
-					if err != nil {
-						continue
+						//continue
 					}
 
 					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
-
-					req, _ := http.NewRequest(http.MethodPost, addr, bytes.NewBuffer(byt))
-					req.Header.Set("Content-Type", "application/json")
-					req.Body.Close()
-
-					if cfg.log {
-						infoLog.Printf("Request text: %s\n", addr+string(byt))
+					req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+					if err != nil {
+						continue
 					}
-					//dataChannel <- addr
 					dataChannel <- req
 
 				}
-				addr := addrServer + "/update/counter/PollCount/1"
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
-				}
-				//dataChannel <- addr
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta, _ := strconv.ParseInt("1", 10, 64)
+				m.Delta = &delta
 
-				addr1 := addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr1)
+				addr := addrServer + "/update/counter/PollCount/1"
+				req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				if err != nil {
+					dataChannel <- req
 				}
-				//dataChannel <- addr1
+
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				delta1, _ := strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta1
+				mValue := rand.Float64()
+				m.Value = &mValue
+				addr1 := addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
+
+				req1, err1 := newRequest(m, addr1, http.MethodPost, cfg.log, infoLog)
+				if err1 != nil {
+					dataChannel <- req1
+				}
 
 				time.Sleep(time.Duration(cfg.intervalMetric) * time.Second)
 			}

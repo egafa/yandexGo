@@ -33,11 +33,12 @@ func main() {
 
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(m))
+		r.Post("/", handler.UpdateMetricHandlerChi(m))
 	})
 
 	r.Route("/value", func(r chi.Router) {
 		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
-		r.Post("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
+		r.Post("/", handler.ValueMetricHandlerChi(m))
 	})
 
 	srv := &http.Server{
