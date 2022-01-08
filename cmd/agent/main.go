@@ -99,18 +99,18 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				m.ID = "RandomValue"
 				m.MType = "gauge"
-				delta1, _ := strconv.ParseInt("0", 10, 64)
-				m.Delta = &delta1
+				delta, _ = strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta
 				mValue := rand.Float64()
 				m.Value = &mValue
-				addr1 := addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
 
-				req1, err1 := newRequest(m, addr1, http.MethodPost, cfg.log, infoLog)
-				if err1 != nil {
-					dataChannel <- req1
+				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
+				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				if err != nil {
+					dataChannel <- req
 				}
 
-				time.Sleep(time.Duration(cfg.intervalMetric) * time.Second)
+				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
@@ -155,7 +155,9 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			}
 		default:
 			stopchanel <- 0
+
 		}
+		time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
 
 	}
 
@@ -164,8 +166,10 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 type cfg struct {
 	addrServer     string
 	log            bool
-	intervalMetric int
-	timeout        int
+	pollInterval   int
+	reportInterval int
+
+	timeout int
 }
 
 func main() {
@@ -173,7 +177,8 @@ func main() {
 	cfg := cfg{
 		addrServer:     "http://127.0.0.1:8080",
 		log:            true,
-		intervalMetric: 4,
+		pollInterval:   2,
+		reportInterval: 10,
 		timeout:        3,
 	}
 
