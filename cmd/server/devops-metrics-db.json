@@ -1,0 +1,1 @@
+{"GaugeData":{},"CounterData":{"Alloc":1497688,"BuckHashSys":6226,"Frees":1638,"GCSys":3622936,"HeapInuse":2080768,"HeapObjects":12279,"HeapSys":3997696,"Lookups":0,"MCacheInuse":14016,"MCacheSys":16384,"MSpanInuse":46648,"MSpanSys":81920,"Mallocs":13917,"NextGC":4473924,"PauseTotalNs":0,"StackSys":131072,"TotalAlloc":1497688}}

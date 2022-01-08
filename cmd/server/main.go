@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/caarlos0/env"
 	handler "github.com/egafa/yandexGo/api/handler"
@@ -17,23 +19,44 @@ import (
 
 type cfg struct {
 	addr           string
-	log            bool
 	store_Interval int
 	store_File     string
-	restore        bool
+	//restore        bool
 }
 
 func initconfig() cfg {
 	cfg := cfg{}
 
-	cfg.addr = "http://127.0.0.1:8080"
+	cfg.addr = "127.0.0.1:8080"
 
-	cfg.store_Interval = 10
+	cfg.store_Interval = 5
 
-	cfg.store_File = "/tmp/devops-metrics-db.json"
+	//cfg.store_File = "\tmp\devops-metrics-db.json"
+	cfg.store_File = "devops-metrics-db.json"
 
 	env.Parse(&cfg)
 	return cfg
+}
+
+func SaveMapMetric(m model.Metric, cfg cfg) {
+
+	for i := 0; i < 25; i++ {
+		time.Sleep(time.Duration(cfg.store_Interval) * time.Second)
+
+		file, err := os.Create(cfg.store_File)
+		if err != nil {
+			log.Fatalf("Ошибка создания файла: %v", err)
+			continue
+		}
+		defer file.Close()
+
+		encoder := json.NewEncoder(file)
+		err = encoder.Encode(m)
+		if err != nil {
+			log.Fatalf("Ошибка сериализации: %v", err)
+		}
+
+	}
 }
 
 func main() {
@@ -68,6 +91,8 @@ func main() {
 
 	srv.Addr = cfg.addr
 
+	go SaveMapMetric(m, cfg)
+
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
@@ -79,6 +104,7 @@ func main() {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
+		log.Print("HTTP server Shutdown")
 		close(idleConnsClosed)
 	}()
 
@@ -88,5 +114,7 @@ func main() {
 	}
 
 	<-idleConnsClosed
+
+	log.Print("HTTP server close")
 
 }
