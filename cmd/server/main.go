@@ -8,15 +8,36 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/caarlos0/env"
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func main() {
+type cfg struct {
+	addr           string
+	log            bool
+	store_Interval int
+	store_File     string
+	restore        bool
+}
 
-	addr := "127.0.0.1:8080"
+func initconfig() cfg {
+	cfg := cfg{}
+
+	cfg.addr = "http://127.0.0.1:8080"
+
+	cfg.store_Interval = 10
+
+	cfg.store_File = "/tmp/devops-metrics-db.json"
+
+	env.Parse(&cfg)
+	return cfg
+}
+
+func main() {
+	cfg := initconfig()
 
 	model.InitMapMetricVal()
 	m := model.GetMetricVal()
@@ -45,7 +66,7 @@ func main() {
 		Handler: r,
 	}
 
-	srv.Addr = addr
+	srv.Addr = cfg.addr
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
