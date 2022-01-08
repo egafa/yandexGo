@@ -17,6 +17,8 @@ import (
 
 	"encoding/json"
 
+	"github.com/caarlos0/env"
+
 	"github.com/egafa/yandexGo/api/model"
 )
 
@@ -168,19 +170,33 @@ type cfg struct {
 	log            bool
 	pollInterval   int
 	reportInterval int
+	timeout        int
+}
 
-	timeout int
+func initconfig() cfg {
+	cfg := cfg{}
+	env.Parse(&cfg)
+
+	if cfg.addrServer == "" {
+		cfg.addrServer = "http://127.0.0.1:8080"
+	}
+
+	if cfg.pollInterval == 0 {
+		cfg.pollInterval = 2
+	}
+	if cfg.reportInterval == 0 {
+		cfg.reportInterval = 10
+	}
+	if cfg.timeout == 0 {
+		cfg.timeout = 3
+	}
+
+	return cfg
 }
 
 func main() {
 
-	cfg := cfg{
-		addrServer:     "http://127.0.0.1:8080",
-		log:            true,
-		pollInterval:   2,
-		reportInterval: 10,
-		timeout:        3,
-	}
+	cfg := initconfig()
 
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
@@ -214,7 +230,7 @@ func main() {
 	stopchanel := make(chan int, 1)
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
-	timer := time.NewTimer(4 * time.Second) // создаём таймер
+	timer := time.NewTimer(2 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
