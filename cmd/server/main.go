@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
-	"github.com/caarlos0/env"
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
@@ -18,31 +19,71 @@ import (
 )
 
 type cfg struct {
-	addr           string
-	store_Interval int
-	store_File     string
-	//restore        bool
+	ADDRESS        string
+	STORE_INTERVAL int
+	STORE_FILE     string
+	RESTORE        bool
 }
 
 func initconfig() cfg {
 	cfg := cfg{}
 
-	cfg.addr = "127.0.0.1:8080"
+	cfg.ADDRESS = "127.0.0.1:80"
+	cfg.STORE_INTERVAL = 5
+	cfg.RESTORE = true
+	cfg.STORE_FILE = "\\tmp\\devops-metrics-db.json"
 
-	cfg.store_Interval = 5
+	cfg_ADDRESS := os.Getenv("ADDRESS")
+	if cfg_ADDRESS != "" {
+		cfg.ADDRESS = cfg_ADDRESS
+	}
 
-	//cfg.store_File = "\tmp\devops-metrics-db.json"
-	cfg.store_File = "devops-metrics-db.json"
+	cfg_STORE_INTERVAL := os.Getenv("STORE_INTERVAL")
+	if cfg_STORE_INTERVAL != "" {
+		i, err := strconv.ParseInt(cfg_STORE_INTERVAL, 10, 0)
 
-	env.Parse(&cfg)
+		if err == nil {
+			cfg.STORE_INTERVAL = int(i)
+		}
+	}
+
+	cfg_RESTORE := os.Getenv("RESTORE")
+	if cfg_RESTORE != "" {
+		if cfg_RESTORE == "0" {
+			cfg.RESTORE = false
+		} else {
+			cfg.RESTORE = true
+		}
+	}
+	cfg.RESTORE = true
+	/*
+		cfg.ADDRESS = os.Getenv("ADDRESS")
+		cfg.STORE_FILE = os.Getenv("STORE_FILE")
+		cfg.STORE_INTERVAL = os.Getenv("STORE_INTERVAL")
+	*/
+
+	ex, err := os.Executable()
+	if err != nil {
+		cfg.STORE_FILE = ""
+	} else {
+		exPath := filepath.Dir(ex)
+		//nameSlach := filepath.ToSlash(exPath)
+		//nameSlach = strings.ReplaceAll(nameSlach, "//", "/")
+		//nameSlach = filepath.FromSlash(nameSlach) + cfg.STORE_FILE
+		cfg.STORE_FILE = exPath + cfg.STORE_FILE
+	}
+
+	log.Printf("cfg.STORE_FILE: %v", cfg.STORE_FILE)
+	//*/
+
 	return cfg
 }
 
 func SaveMapMetric(m model.Metric, cfg cfg) {
 
-	file, err := os.Create(cfg.store_File)
+	file, err := os.Create(cfg.STORE_FILE)
 	if err != nil {
-		log.Fatalf("Ошибка создания файла: %v", err)
+		log.Fatalf("Ошибка создания файла: %v", cfg.STORE_FILE)
 		return
 	}
 	defer file.Close()
@@ -55,10 +96,39 @@ func SaveMapMetric(m model.Metric, cfg cfg) {
 
 }
 
+func LoadMapMetric(fileName string) (model.MapMetric, error) {
+	var v model.MapMetric
+
+	file, err := os.OpenFile(fileName, os.O_RDONLY, 0777)
+	if err != nil {
+		log.Printf("Ошибка открытия файла: %v %v", fileName, err)
+		return v, err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&v)
+	if err != nil {
+		log.Printf("Ошибка десериализации: %v", err)
+		return v, err
+
+	}
+
+	return v, nil
+}
+
 func main() {
+
 	cfg := initconfig()
 
-	model.InitMapMetricVal()
+	if cfg.RESTORE {
+		v, err := LoadMapMetric(cfg.STORE_FILE)
+		if err != nil {
+			model.InitMapMetricVal()
+		} else {
+			model.InitMapMetricValData(v.GaugeData, v.CounterData)
+		}
+	}
 	m := model.GetMetricVal()
 
 	r := chi.NewRouter()
@@ -85,11 +155,11 @@ func main() {
 		Handler: r,
 	}
 
-	srv.Addr = cfg.addr
+	srv.Addr = cfg.ADDRESS
 
 	go func() {
 		for { //i := 0; i < 25; i++ {
-			time.Sleep(time.Duration(cfg.store_Interval) * time.Second)
+			time.Sleep(time.Duration(cfg.STORE_INTERVAL) * time.Second)
 			SaveMapMetric(m, cfg)
 		}
 	}()

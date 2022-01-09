@@ -36,6 +36,22 @@ func InitMapMetricVal() {
 	MetricVal = mapMetricVal
 }
 
+func InitMapMetricValData(GaugeData map[string]float64, CounterData map[string]int64) {
+	mapMetricVal := MapMetric{}
+	mapMetricVal.GaugeData = make(map[string]float64)
+	mapMetricVal.CounterData = make(map[string]int64)
+
+	for key, value := range GaugeData {
+		mapMetricVal.GaugeData[key] = value
+	}
+
+	for key1, value1 := range CounterData {
+		mapMetricVal.CounterData[key1] = value1
+	}
+
+	MetricVal = mapMetricVal
+}
+
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
 }
@@ -92,6 +108,21 @@ func (m MapMetric) GetCounterMetricTemplate() CounterTemplateMetric {
 	res.Data = m.CounterData
 
 	return res
+}
+
+func (m MapMetric) SetData(GaugeData map[string]float64, CounterData map[string]int64) {
+
+	m.GaugeData = make(map[string]float64)
+	m.CounterData = make(map[string]int64)
+
+	for key, value := range GaugeData {
+		m.GaugeData[key] = value
+	}
+
+	for key1, value1 := range CounterData {
+		m.CounterData[key1] = value1
+	}
+
 }
 
 type Metrics struct {

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -42,7 +43,7 @@ func newRequest(m interface{}, addr, method string, log bool, infoLog *log.Logge
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
 	//var m model.Metrics
 
-	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(cfg.dirname+"\\text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -84,6 +85,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 					if err != nil {
 						continue
 					}
+					if cfg.log {
+						infoLog.Printf("Request text: %s\n", addr)
+					}
 					dataChannel <- req
 
 				}
@@ -98,6 +102,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				if err != nil {
 					dataChannel <- req
 				}
+				if cfg.log {
+					infoLog.Printf("Request text: %s\n", addr)
+				}
 
 				m.ID = "RandomValue"
 				m.MType = "gauge"
@@ -111,6 +118,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				if err != nil {
 					dataChannel <- req
 				}
+				if cfg.log {
+					infoLog.Printf("Request text: %s\n", addr)
+				}
 
 				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
@@ -122,7 +132,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	var textReq *http.Request
 	//var m model.Metrics
 
-	f, err := os.OpenFile("textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(cfg.dirname+"\\textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -171,6 +181,7 @@ type cfg struct {
 	pollInterval   int
 	reportInterval int
 	timeout        int
+	dirname        string
 }
 
 func initconfig() cfg {
@@ -190,6 +201,16 @@ func initconfig() cfg {
 	if cfg.timeout == 0 {
 		cfg.timeout = 3
 	}
+
+	ex, err := os.Executable()
+	if err != nil {
+		cfg.dirname = ""
+	} else {
+		exPath := filepath.Dir(ex)
+		cfg.dirname = exPath
+	}
+
+	cfg.log = true
 
 	return cfg
 }
