@@ -227,19 +227,18 @@ func main() {
 	//dataChannel := make(chan string, len(namesMetric)*100)
 	dataChannel := make(chan *http.Request, len(namesMetric)*100)
 
-	stopchanel := make(chan int, 1)
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
 	timer := time.NewTimer(2 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
+	stopchanel := make(chan int, 1)
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until a signal is received.
-
-	<-c
+	<-sigint
 
 	cancel()
 

@@ -40,23 +40,19 @@ func initconfig() cfg {
 
 func SaveMapMetric(m model.Metric, cfg cfg) {
 
-	for i := 0; i < 25; i++ {
-		time.Sleep(time.Duration(cfg.store_Interval) * time.Second)
-
-		file, err := os.Create(cfg.store_File)
-		if err != nil {
-			log.Fatalf("Ошибка создания файла: %v", err)
-			continue
-		}
-		defer file.Close()
-
-		encoder := json.NewEncoder(file)
-		err = encoder.Encode(m)
-		if err != nil {
-			log.Fatalf("Ошибка сериализации: %v", err)
-		}
-
+	file, err := os.Create(cfg.store_File)
+	if err != nil {
+		log.Fatalf("Ошибка создания файла: %v", err)
+		return
 	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(m)
+	if err != nil {
+		log.Fatalf("Ошибка сериализации: %v", err)
+	}
+
 }
 
 func main() {
@@ -91,7 +87,12 @@ func main() {
 
 	srv.Addr = cfg.addr
 
-	go SaveMapMetric(m, cfg)
+	go func() {
+		for { //i := 0; i < 25; i++ {
+			time.Sleep(time.Duration(cfg.store_Interval) * time.Second)
+			SaveMapMetric(m, cfg)
+		}
+	}()
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
@@ -115,6 +116,7 @@ func main() {
 
 	<-idleConnsClosed
 
+	SaveMapMetric(m, cfg)
 	log.Print("HTTP server close")
 
 }

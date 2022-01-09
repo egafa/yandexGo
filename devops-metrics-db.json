@@ -1,1 +1,1 @@
-{"GaugeData":{},"CounterData":{}}
+{"GaugeData":{},"CounterData":{"BuckHashSys":6226,"Frees":100,"GCSys":1752872,"HeapIdle":3309568,"MCacheSys":16384,"MSpanInuse":20536,"NextGC":4473924,"TotalAlloc":287216}}
