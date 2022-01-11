@@ -4,7 +4,7 @@ type Metric interface {
 	SaveGaugeVal(nameMetric string, value float64)
 	GetGaugeVal(nameMetric string) (float64, bool)
 	SaveCounterVal(nameMetric string, value int64)
-	GetCounterVal(nameMetric string, num int64) (int64, bool)
+	GetCounterVal(nameMetric string) (int64, bool)
 	GetGaugetMetricTemplate() GaugeTemplateMetric
 	GetCounterMetricTemplate() CounterTemplateMetric
 }
@@ -60,7 +60,7 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 	}
 }
 
-func (m MapMetric) GetCounterVal(nameMetric string, num int64) (int64, bool) {
+func (m MapMetric) GetCounterVal(nameMetric string) (int64, bool) {
 
 	v, ok := m.CounterData[nameMetric]
 	if ok {

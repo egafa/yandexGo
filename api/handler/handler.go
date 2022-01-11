@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
@@ -18,34 +17,33 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		nameMetric := chi.URLParam(r, "nammeMetric")
 		valueMetric := chi.URLParam(r, "valueMetric")
 
-		if strings.ToLower(typeMetric) != "gauge" && strings.ToLower(typeMetric) != "counter" {
-			w.WriteHeader(http.StatusNotImplemented)
-			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+		var err error
+
+		switch typeMetric {
+		case "gauge":
+			f, err := strconv.ParseFloat(valueMetric, 64)
+			if err == nil {
+				m.SaveGaugeVal(nameMetric, f)
+			}
+
+		case "counter":
+			i, err := strconv.ParseInt(valueMetric, 10, 64)
+
+			if err == nil {
+				m.SaveCounterVal(nameMetric, i)
+
+			}
+
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
 			return
 		}
 
-		if strings.ToLower(typeMetric) == "gauge" {
-			f, err := strconv.ParseFloat(valueMetric, 64)
-
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				http.Error(w, "Не определена метрика", http.StatusBadRequest)
-				return
-			}
-
-			m.SaveGaugeVal(nameMetric, f)
-		}
-
-		if strings.ToLower(typeMetric) == "counter" {
-			i, err := strconv.ParseInt(valueMetric, 10, 64)
-
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				http.Error(w, "Не определена метрика", http.StatusBadRequest)
-				return
-			}
-
-			m.SaveCounterVal(nameMetric, i)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			return
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -60,32 +58,22 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
 
-		if typeMetric == "gauge" {
+		switch typeMetric {
+		case "gauge":
 			val, ok := m.GetGaugeVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
-				//w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
 				w.Write([]byte(fmt.Sprintf("%v", val)))
-
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-				http.Error(w, "Не найдена метрика", http.StatusNotFound)
 			}
-
-		}
-
-		if typeMetric == "counter" {
-
-			val, ok := m.GetCounterVal(nameMetric, -1)
+		case "counter":
+			val, ok := m.GetCounterVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
-				//w.Write([]byte(fmt.Sprintf("nameMetric %s is: %v\n", nameMetric, val)))
-			} else {
-				w.WriteHeader(http.StatusNotFound)
-				http.Error(w, "Не найдена метрика", http.StatusNotFound)
 			}
-
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
 
 	}
