@@ -17,7 +17,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		nameMetric := chi.URLParam(r, "nammeMetric")
 		valueMetric := chi.URLParam(r, "valueMetric")
 
-		var err error
+		var errConv error
 
 		switch typeMetric {
 		case "gauge":
@@ -25,14 +25,15 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			if err == nil {
 				m.SaveGaugeVal(nameMetric, f)
 			}
+			errConv = err
 
 		case "counter":
 			i, err := strconv.ParseInt(valueMetric, 10, 64)
 
 			if err == nil {
 				m.SaveCounterVal(nameMetric, i)
-
 			}
+			errConv = err
 
 		default:
 			w.WriteHeader(http.StatusBadRequest)
@@ -40,7 +41,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			return
 		}
 
-		if err != nil {
+		if errConv != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Не определена метрика", http.StatusBadRequest)
 			return
