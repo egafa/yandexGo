@@ -15,9 +15,14 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		act := chi.URLParam(r, "act")
 		if act != "update" {
-			w.WriteHeader(http.StatusBadRequest)
-			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+
+			w.WriteHeader(http.StatusNotImplemented)
+			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 			return
+
+			//w.WriteHeader(http.StatusBadRequest)
+			//http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			//return
 		}
 
 		typeMetric := chi.URLParam(r, "typeMetric")
@@ -43,8 +48,8 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			errConv = err
 
 		default:
-			w.WriteHeader(http.StatusBadRequest)
-			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotImplemented)
+			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 			return
 		}
 
