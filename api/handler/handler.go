@@ -65,17 +65,19 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
+				return
 			}
 		case "counter":
 			val, ok := m.GetCounterVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
+				return
 			}
-		default:
-			w.WriteHeader(http.StatusNotFound)
-			http.Error(w, "Не найдена метрика", http.StatusNotFound)
 		}
+
+		w.WriteHeader(http.StatusNotFound)
+		http.Error(w, "Не найдена метрика", http.StatusNotFound)
 
 	}
 }
