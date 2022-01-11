@@ -18,7 +18,7 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 		statusCode int
 	}
 
-	model.InitMapMetricVal()
+	mapMetric := model.NewMapMetric()
 
 	tests := []struct {
 		name    string
@@ -39,7 +39,7 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 
 			r := chi.NewRouter()
 			r.Route("/update", func(r chi.Router) {
-				r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", UpdateMetricHandlerChi(model.GetMetricVal()))
+				r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", UpdateMetricHandlerChi(mapMetric))
 			})
 
 			request := httptest.NewRequest(http.MethodPost, tt.request, nil)

@@ -23,17 +23,11 @@ type CounterTemplateMetric struct {
 	Data       map[string]int64
 }
 
-var MetricVal Metric
-
-func GetMetricVal() Metric {
-	return MetricVal
-}
-
-func InitMapMetricVal() {
+func NewMapMetric() MapMetric {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)
 	mapMetricVal.CounterData = make(map[string]int64)
-	MetricVal = mapMetricVal
+	return mapMetricVal
 }
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
