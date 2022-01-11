@@ -13,6 +13,13 @@ import (
 func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		act := chi.URLParam(r, "act")
+		if act != "update" {
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			return
+		}
+
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
 		valueMetric := chi.URLParam(r, "valueMetric")
@@ -55,6 +62,13 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		act := chi.URLParam(r, "act")
+		if act != "value" {
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			return
+		}
 
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
