@@ -28,17 +28,17 @@ func main() {
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", handler.ListMetricsChiHandleFunc(mapMetric))
-		r.Post("/{act}/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
-		r.Get("/{act}/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(mapMetric))
 	})
 
-	//r.Route("/update", func(r chi.Router) {
-	//	r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
-	//})
+	r.Route("/update", func(r chi.Router) {
+		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
+		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric))
+	})
 
-	//r.Route("/value", func(r chi.Router) {
-	//	r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(mapMetric))
-	//})
+	r.Route("/value", func(r chi.Router) {
+		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(mapMetric))
+		r.Post("/", handler.ValueMetricHandlerChi(mapMetric))
+	})
 
 	srv := &http.Server{
 		Handler: r,

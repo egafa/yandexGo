@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/go-chi/chi/v5"
@@ -13,25 +14,13 @@ import (
 func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		act := chi.URLParam(r, "act")
-		if act != "update" {
-
-			w.WriteHeader(http.StatusNotImplemented)
-			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-			return
-
-			//w.WriteHeader(http.StatusBadRequest)
-			//http.Error(w, "Не определена метрика", http.StatusBadRequest)
-			//return
-		}
-
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
 		valueMetric := chi.URLParam(r, "valueMetric")
 
 		var errConv error
 
-		switch typeMetric {
+		switch strings.ToLower(typeMetric) {
 		case "gauge":
 			f, err := strconv.ParseFloat(valueMetric, 64)
 			if err == nil {
@@ -63,6 +52,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		w.Header().Set("application-type", "text/plain")
 		w.Write([]byte(valueMetric))
 	}
+
 }
 
 func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
