@@ -121,15 +121,18 @@ func main() {
 
 	cfg := initconfig()
 
-	if cfg.RESTORE {
-		v, err := LoadMapMetric(cfg.STORE_FILE)
-		if err != nil {
-			model.InitMapMetricVal()
-		} else {
-			model.InitMapMetricValData(v.GaugeData, v.CounterData)
+	mapMetric := model.NewMapMetric()
+
+	/*
+		if cfg.RESTORE {
+			v, err := LoadMapMetric(cfg.STORE_FILE)
+			if err != nil {
+				model.InitMapMetricVal()
+			} else {
+				model.InitMapMetricValData(v.GaugeData, v.CounterData)
+			}
 		}
-	}
-	m := model.GetMetricVal()
+	*/
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -138,21 +141,22 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", handler.ListMetricsChiHandleFunc(m))
+		r.Get("/", handler.ListMetricsChiHandleFunc(mapMetric))
 	})
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(m))
-		r.Post("/", handler.UpdateMetricHandlerChi(m))
+		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
+		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric))
 	})
 
 	r.Route("/value", func(r chi.Router) {
-		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(m))
-		r.Post("/", handler.ValueMetricHandlerChi(m))
+		r.Get("/{typeMetric}/{nammeMetric}", handler.ValueMetricHandlerChi(mapMetric))
+		r.Post("/", handler.ValueMetricHandlerChi(mapMetric))
 	})
 
 	srv := &http.Server{
 		Handler: r,
+		Addr:    cfg.ADDRESS,
 	}
 
 	srv.Addr = cfg.ADDRESS
@@ -160,7 +164,7 @@ func main() {
 	go func() {
 		for { //i := 0; i < 25; i++ {
 			time.Sleep(time.Duration(cfg.STORE_INTERVAL) * time.Second)
-			SaveMapMetric(m, cfg)
+			SaveMapMetric(mapMetric, cfg)
 		}
 	}()
 
@@ -186,7 +190,7 @@ func main() {
 
 	<-idleConnsClosed
 
-	SaveMapMetric(m, cfg)
+	SaveMapMetric(mapMetric, cfg)
 	log.Print("HTTP server close")
 
 }
