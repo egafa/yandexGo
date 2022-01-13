@@ -27,7 +27,7 @@ type cfg struct {
 func initconfig() cfg {
 	cfg := cfg{}
 
-	cfg.ADDRESS = "127.0.0.1:80"
+	cfg.ADDRESS = "127.0.0.1:8080"
 	cfg.STORE_INTERVAL = 5
 	cfg.RESTORE = true
 	cfg.STORE_FILE = "\\tmp\\devops-metrics-db.json"
