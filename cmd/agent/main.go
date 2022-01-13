@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"reflect"
@@ -148,6 +149,19 @@ func main() {
 
 	dataChannel := make(chan string, len(namesMetric)*100)
 	stopchanel := make(chan int, 1)
+
+	u, err := url.Parse("http://127.0.0.1:8080/update/type%1/name%2/val%3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	u.Scheme = "http"
+	u.Host = cfg.addrServer
+	q := u.Query()
+	q.Set("type", "golang")
+	q.Set("name", "golangname")
+	q.Set("val", "100")
+	u.RawQuery = q.Encode()
+	fmt.Println(u)
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
 	timer := time.NewTimer(4 * time.Second) // создаём таймер
