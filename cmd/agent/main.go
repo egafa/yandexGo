@@ -122,7 +122,7 @@ type cfg struct {
 func main() {
 
 	cfg := cfg{
-		addrServer:     "http://127.0.0.1:8080",
+		addrServer:     "127.0.0.1:8080",
 		log:            false,
 		intervalMetric: 4,
 		timeout:        3,

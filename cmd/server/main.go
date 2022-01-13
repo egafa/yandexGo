@@ -42,9 +42,9 @@ func main() {
 
 	srv := &http.Server{
 		Handler: r,
-		//Addr:    addr,
+		Addr:    addr,
 	}
-	srv.Addr = addr
+	//srv.Addr = addr
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
