@@ -15,16 +15,34 @@ import (
 	"time"
 )
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan string) {
+func newRequest(urlReq string, method string, loger bool, infoLog *log.Logger) *http.Request {
 
-	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	_, err := url.Parse(urlReq)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	req, _ := http.NewRequest(method, urlReq, nil)
+	//req.Body.Close()
+
+	if loger {
+		infoLog.Printf("Request text: %s\n", urlReq)
+	}
+
+	return req
+}
+
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
+
+	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // логи пока решил не переделывать, в 7 инкременте задание с логами связано, в памках икремента передалаю
 	if err != nil {
 		log.Println(err)
 	}
 	defer f.Close()
 
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
-	addrServer := cfg.addrServer
+
+	urlUpdate := "http://%s/update/%s/%s/%v"
 
 	for { //i := 0; i < 3; i++ {
 
@@ -42,24 +60,17 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					val := v.FieldByName(key).Interface()
 
-					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
-					if cfg.log {
-						infoLog.Printf("Request text: %s\n", addr)
-					}
-					dataChannel <- addr
+					// сделал отдельную функцию для формирования запроса
+					// не очень понял как прикрутить url.Parse для сборки url
+					req := newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, typeNаme, key, val), http.MethodPost, cfg.log, infoLog)
+
+					dataChannel <- req
 
 				}
-				addr := addrServer + "/update/counter/PollCount/1"
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
-				}
-				dataChannel <- addr
 
-				addr1 := addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
-				}
-				dataChannel <- addr1
+				dataChannel <- newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, "counter", "PollCount", 1), http.MethodPost, cfg.log, infoLog)
+
+				dataChannel <- newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, "gauge", "RandomValue", rand.Float64()), http.MethodPost, cfg.log, infoLog)
 
 				time.Sleep(time.Duration(cfg.intervalMetric) * time.Second)
 			}
@@ -67,9 +78,10 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan string, stopchanel chan int, cfg cfg) {
-	var textReq string
-	f, err := os.OpenFile("textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel chan int, cfg cfg) {
+	var req *http.Request
+
+	f, err := os.OpenFile("textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // логи пока решил не переделывать, в 7 инкременте задание с логами связано, в памках икремента передалаю
 	if err != nil {
 		log.Println(err)
 	}
@@ -83,20 +95,13 @@ func sendMetric(ctx context.Context, dataChannel chan string, stopchanel chan in
 	for { //i := 0; i < 40; i++ {
 
 		select {
-		case textReq = <-dataChannel:
+		case req = <-dataChannel:
 			{
-				req, _ := http.NewRequest(http.MethodPost, textReq, nil)
-				resp, err := client.Do(req)
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", req.URL)
-				}
 
-				if err != nil {
-					continue
-				}
+				resp, _ := client.Do(req)
 
 				if cfg.log {
-					infoLog.Printf("Status: " + resp.Status)
+					infoLog.Printf("Request text: %s %v\n", req.URL, resp.Status)
 				}
 			}
 		default:
@@ -118,7 +123,7 @@ func main() {
 
 	cfg := cfg{
 		addrServer:     "http://127.0.0.1:8080",
-		log:            true,
+		log:            false,
 		intervalMetric: 4,
 		timeout:        3,
 	}
@@ -147,21 +152,9 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	dataChannel := make(chan string, len(namesMetric)*100)
+	dataChannel := make(chan *http.Request, len(namesMetric)*100) //теперь в канале будет не url, а сам запрос. Мне кажется так лучше, когда в запросе будем заполнять Body
 	stopchanel := make(chan int, 1)
 
-	u, err := url.Parse("http://127.0.0.1:8080/update/type%1/name%2/val%3")
-	if err != nil {
-		log.Fatal(err)
-	}
-	u.Scheme = "http"
-	u.Host = cfg.addrServer
-	q := u.Query()
-	q.Set("type", "golang")
-	q.Set("name", "golangname")
-	q.Set("val", "100")
-	u.RawQuery = q.Encode()
-	fmt.Println(u)
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
 	timer := time.NewTimer(4 * time.Second) // создаём таймер

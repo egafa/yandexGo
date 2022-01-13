@@ -18,7 +18,7 @@ func main() {
 
 	addr := "127.0.0.1:8080"
 
-	mapMetric := model.NewMapMetric()
+	mapMetric := model.NewMapMetric() //избавился от глобальной переменной
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
