@@ -23,6 +23,13 @@ type CounterTemplateMetric struct {
 	Data       map[string]int64
 }
 
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
+
 func NewMapMetric() MapMetric {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)
@@ -30,6 +37,7 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
+/*
 func InitMapMetricValData(GaugeData map[string]float64, CounterData map[string]int64) {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)
@@ -45,6 +53,7 @@ func InitMapMetricValData(GaugeData map[string]float64, CounterData map[string]i
 
 	MetricVal = mapMetricVal
 }
+*/
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
@@ -117,11 +126,4 @@ func (m MapMetric) SetData(GaugeData map[string]float64, CounterData map[string]
 		m.CounterData[key1] = value1
 	}
 
-}
-
-type Metrics struct {
-	ID    string   `json:"id"`              // имя метрики
-	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }

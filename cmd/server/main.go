@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
-	"time"
 
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
@@ -159,14 +158,14 @@ func main() {
 		Addr:    cfg.ADDRESS,
 	}
 
-	srv.Addr = cfg.ADDRESS
-
-	go func() {
-		for { //i := 0; i < 25; i++ {
-			time.Sleep(time.Duration(cfg.STORE_INTERVAL) * time.Second)
-			SaveMapMetric(mapMetric, cfg)
-		}
-	}()
+	/*
+		go func() {
+			for { //i := 0; i < 25; i++ {
+				time.Sleep(time.Duration(cfg.STORE_INTERVAL) * time.Second)
+				SaveMapMetric(mapMetric, cfg)
+			}
+		}()
+	*/
 
 	idleConnsClosed := make(chan struct{})
 	go func() {
