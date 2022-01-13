@@ -70,8 +70,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					m := model.Metrics{}
 					m.ID = key
-					m.MType = typeNаme
-					if typeNаme == "gauge" {
+					typeNаme1 := "gauge"
+					m.MType = typeNаme1
+					if typeNаme1 == "gauge" {
 						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
 						m.Value = &f
 					} else {
@@ -82,13 +83,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
 					req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-					if err != nil {
-						continue
+					if err == nil {
+						dataChannel <- req
 					}
-					if cfg.log {
-						infoLog.Printf("Request text: %s\n", addr)
-					}
-					dataChannel <- req
 
 				}
 				m := model.Metrics{}
@@ -99,11 +96,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				addr := addrServer + "/update/counter/PollCount/1"
 				req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				if err != nil {
+				if err == nil {
 					dataChannel <- req
-				}
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
 				}
 
 				m.ID = "RandomValue"
@@ -115,11 +109,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
 				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				if err != nil {
+				if err == nil {
 					dataChannel <- req
-				}
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", addr)
 				}
 
 				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
