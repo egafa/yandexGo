@@ -43,7 +43,7 @@ func newRequest(m interface{}, addr, method string, log bool, infoLog *log.Logge
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
 	//var m model.Metrics
 
-	f, err := os.OpenFile(cfg.dirname+"\\text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 	}
@@ -62,6 +62,31 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
+
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta, _ := strconv.ParseInt("1", 10, 64)
+				m.Delta = &delta
+
+				addr := addrServer + "/update/counter/PollCount/1"
+				req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				if err == nil {
+					dataChannel <- req
+				}
+
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				delta, _ = strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta
+				mValue := rand.Float64()
+				m.Value = &mValue
+
+				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
+				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				if err == nil {
+					dataChannel <- req
+				}
 
 				v := reflect.ValueOf(ms)
 				for key, typeNаme := range namesMetric {
@@ -88,32 +113,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 					}
 
 				}
-				m := model.Metrics{}
-				m.ID = "PollCount"
-				m.MType = "counter"
-				delta, _ := strconv.ParseInt("1", 10, 64)
-				m.Delta = &delta
 
-				addr := addrServer + "/update/counter/PollCount/1"
-				req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				if err == nil {
-					dataChannel <- req
-				}
-
-				m.ID = "RandomValue"
-				m.MType = "gauge"
-				delta, _ = strconv.ParseInt("0", 10, 64)
-				m.Delta = &delta
-				mValue := rand.Float64()
-				m.Value = &mValue
-
-				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
-				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				if err == nil {
-					dataChannel <- req
-				}
-
-				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
+				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
@@ -173,6 +174,7 @@ type cfg struct {
 	reportInterval int
 	timeout        int
 	dirname        string
+	dirlog         string
 }
 
 func initconfig() cfg {
@@ -199,6 +201,10 @@ func initconfig() cfg {
 	} else {
 		exPath := filepath.Dir(ex)
 		cfg.dirname = exPath
+	}
+
+	if cfg.dirlog == "" {
+		cfg.dirlog = "D:\\gafa\\Go\\yandexGo\\"
 	}
 
 	cfg.log = true
