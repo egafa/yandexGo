@@ -24,7 +24,7 @@ import (
 )
 
 func newRequest(m interface{}, addr, method string, log bool, infoLog *log.Logger) (*http.Request, error) {
-	byt, err := json.Marshal(m)
+	byt, err := json.MarshalIndent(m, "", "")
 	if err != nil {
 		return nil, err
 	}
