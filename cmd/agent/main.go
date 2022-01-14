@@ -96,9 +96,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 					m := model.Metrics{}
 					m.ID = key
-					typeNаme1 := "gauge"
-					m.MType = typeNаme1
-					if typeNаme1 == "gauge" {
+					m.MType = typeNаme
+					if typeNаme == "gauge" {
 						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
 						m.Value = &f
 					} else {
@@ -106,8 +105,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 						m.Delta = &i
 						//continue
 					}
-					fmt.Print(typeNаme)
-					addr := addrServer + "/update/" + typeNаme1 + "/" + key + "/" + fmt.Sprintf("%v", val)
+
+					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
 					req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 					if err == nil {
 						dataChannel <- req
@@ -115,7 +114,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				}
 
-				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
+				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
@@ -147,7 +146,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				resp, err := client.Do(textReq)
 				body, _ := ioutil.ReadAll(textReq.Body)
-				log.Println("Запрос агента " + textReq.URL.String() + string(body))
+				log.Println("Запрос агента " + textReq.Method + "  " + textReq.URL.String() + string(body))
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", textReq.URL)
 				}
@@ -164,7 +163,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			stopchanel <- 0
 
 		}
-		time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
+		//time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
 
 	}
 
@@ -195,7 +194,7 @@ func initconfig() cfg {
 		cfg.reportInterval = 2
 	}
 	if cfg.timeout == 0 {
-		cfg.timeout = 3
+		cfg.timeout = 2
 	}
 
 	ex, err := os.Executable()
@@ -232,7 +231,7 @@ func main() {
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
 		case "uint64":
-			namesMetric[strNаme] = "counter"
+			namesMetric[strNаme] = "gauge" //"counter"
 		case "float64":
 			namesMetric[strNаme] = "gauge"
 		default:
@@ -248,7 +247,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, dataChannel)
 
-	timer := time.NewTimer(2 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	timer := time.NewTimer(1 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
