@@ -52,7 +52,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 	addrServer := cfg.addrServer
 
-	for { //i := 0; i < 3; i++ {
+	for i := 0; i < 400; i++ {
 
 		select {
 		case <-ctx.Done():
