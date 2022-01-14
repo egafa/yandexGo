@@ -106,8 +106,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 						m.Delta = &i
 						//continue
 					}
-
-					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
+					fmt.Print(typeNаme)
+					addr := addrServer + "/update/" + typeNаme1 + "/" + key + "/" + fmt.Sprintf("%v", val)
 					req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 					if err == nil {
 						dataChannel <- req
