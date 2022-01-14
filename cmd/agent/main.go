@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -52,7 +53,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 400; i++ {
+	for i := 0; i < 51; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -82,7 +83,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				mValue := rand.Float64()
 				m.Value = &mValue
 
-				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", rand.Float64())
+				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
 				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 				if err == nil {
 					dataChannel <- req
@@ -145,9 +146,10 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 				//resp, err := client.Do(req)
 
 				resp, err := client.Do(textReq)
+				body, _ := ioutil.ReadAll(textReq.Body)
+				log.Println("Запрос агента " + textReq.URL.String() + string(body))
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", textReq.URL)
-					log.Println("Запрос агента " + textReq.URL.String())
 				}
 
 				if err != nil {
@@ -190,7 +192,7 @@ func initconfig() cfg {
 		cfg.pollInterval = 2
 	}
 	if cfg.reportInterval == 0 {
-		cfg.reportInterval = 10
+		cfg.reportInterval = 2
 	}
 	if cfg.timeout == 0 {
 		cfg.timeout = 3
@@ -208,7 +210,7 @@ func initconfig() cfg {
 		cfg.dirlog = "D:\\gafa\\Go\\yandexGo\\"
 	}
 
-	cfg.log = true
+	cfg.log = false
 
 	return cfg
 }
@@ -255,7 +257,10 @@ func main() {
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until a signal is received.
-	<-sigint
+	//<-sigint
+
+	timer = time.NewTimer(30 * time.Second)
+	<-timer.C
 
 	cancel()
 

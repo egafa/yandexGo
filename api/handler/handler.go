@@ -19,7 +19,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		var logtext string
 
 		if r.Header.Get("Content-Type") == "application/json" {
-			logtext = "handler update Json " + r.URL.String()
+			logtext = "***************************** handler update Json " + r.URL.String()
 			log.Println(logtext)
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
@@ -43,9 +43,11 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
 				m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
+				log.Print(logtext + " Обработана метрика " + string(body))
 
 			case "counter":
 				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+				log.Print(logtext + " Обработана метрика " + string(body))
 
 			default:
 				w.WriteHeader(http.StatusBadRequest)
@@ -58,7 +60,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		}
 
-		logtext = "handler update plain " + r.URL.String()
+		logtext = " ****************************** handler update plain " + r.URL.String()
 		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
@@ -110,7 +112,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		var logtext string
 
 		if r.Method == http.MethodPost && r.Header.Get("Content-Type") == "application/json" {
-			logtext = "handler value Json " + r.URL.String()
+			logtext = "*************** handler value Json " + r.URL.String()
 			log.Println(logtext)
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
@@ -198,7 +200,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			return
 		}
 
-		logtext = "handler value plain " + r.URL.String()
+		logtext = "*************** handler value plain " + r.URL.String()
 		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
