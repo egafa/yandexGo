@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -15,14 +16,17 @@ import (
 
 func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var logtext string
 
 		if r.Header.Get("Content-Type") == "application/json" {
+			logtext = "handler update Json " + r.URL.String()
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
 			defer r.Body.Close()
 			if bodyErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка открытия тела запроса", http.StatusBadRequest)
+				log.Print(logtext + " Ошибка открытия тела запроса " + bodyErr.Error())
 				return
 			}
 
@@ -31,6 +35,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusBadRequest)
+				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
 			}
 
@@ -44,11 +49,15 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 				http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
+
+				log.Print(logtext + " Не определен тип метрики " + string(body))
 			}
 
 			return
 
 		}
+
+		logtext = "handler update plain " + r.URL.String()
 
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
@@ -75,12 +84,14 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		default:
 			w.WriteHeader(http.StatusNotImplemented)
 			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+			log.Print(logtext + " Не определен тип метрики ")
 			return
 		}
 
 		if errConv != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			http.Error(w, "Не определена метрика", http.StatusBadRequest)
+			http.Error(w, "Ошибка конвертации значения ", http.StatusBadRequest)
+			log.Print(logtext + " Ошибка конвертации значения  ")
 			return
 		}
 
@@ -94,13 +105,17 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		var logtext string
+
 		if r.Method == http.MethodPost && r.Header.Get("Content-Type") == "application/json" {
+			logtext = "handler value Json " + r.URL.String()
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
 			r.Body.Close()
 			if bodyErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				log.Print(logtext + " Ошибка открытия тела запроса")
 				return
 			}
 
@@ -108,13 +123,15 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			jsonErr := json.Unmarshal(body, &dataMetrics)
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
+				log.Print(logtext + " Ошибка дессериализации" + string(body))
 				return
 			}
 
 			if strings.ToLower(dataMetrics.MType) != "gauge" && strings.ToLower(dataMetrics.MType) != "counter" {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+				log.Print(logtext + " Не определен тип метрики")
 				return
 			}
 
@@ -125,6 +142,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				} else {
 					w.WriteHeader(http.StatusNotFound)
 					http.Error(w, "Не найдена метрика", http.StatusNotFound)
+					log.Print(logtext + " Не найдена метрика " + string(body))
 					return
 				}
 			}
@@ -136,6 +154,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				} else {
 					w.WriteHeader(http.StatusNotFound)
 					http.Error(w, "Не найдена метрика", http.StatusNotFound)
+					log.Print(logtext + " Не найдена метрика " + string(body))
 					return
 				}
 			}
@@ -156,6 +175,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			default:
 				w.WriteHeader(http.StatusNotFound)
 				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+				log.Print(logtext + " Не найдена метрика " + string(body))
 				return
 			}
 
@@ -171,11 +191,16 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+			log.Print(logtext + " Не определен тип метрики" + string(body))
 			return
 		}
 
+		logtext = "handler value plain " + r.URL.String()
+
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
+
+		logtext = "handler update plain " + r.URL.String()
 
 		switch strings.ToLower(typeMetric) {
 		case "gauge":
@@ -195,7 +220,8 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNotFound)
-		http.Error(w, "Не найдена метрика", http.StatusNotFound)
+		http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+		log.Print(logtext + " Не определен тип метрики " + typeMetric + "  " + nameMetric)
 
 	}
 }
