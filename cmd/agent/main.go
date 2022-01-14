@@ -114,7 +114,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 
 				}
 
-				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
+				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
@@ -147,6 +147,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 				resp, err := client.Do(textReq)
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", textReq.URL)
+					log.Println("Запрос агента " + textReq.URL.String())
 				}
 
 				if err != nil {

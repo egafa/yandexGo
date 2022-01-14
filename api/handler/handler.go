@@ -20,6 +20,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		if r.Header.Get("Content-Type") == "application/json" {
 			logtext = "handler update Json " + r.URL.String()
+			log.Println(logtext)
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
 			defer r.Body.Close()
@@ -58,6 +59,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		}
 
 		logtext = "handler update plain " + r.URL.String()
+		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
@@ -109,6 +111,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		if r.Method == http.MethodPost && r.Header.Get("Content-Type") == "application/json" {
 			logtext = "handler value Json " + r.URL.String()
+			log.Println(logtext)
 
 			body, bodyErr := ioutil.ReadAll(r.Body)
 			r.Body.Close()
@@ -196,11 +199,10 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		}
 
 		logtext = "handler value plain " + r.URL.String()
+		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
 		nameMetric := chi.URLParam(r, "nammeMetric")
-
-		logtext = "handler update plain " + r.URL.String()
 
 		switch strings.ToLower(typeMetric) {
 		case "gauge":
