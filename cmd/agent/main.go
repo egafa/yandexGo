@@ -8,12 +8,15 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"sort"
 	"strconv"
+	"syscall"
 	"time"
 
 	"encoding/json"
@@ -24,6 +27,12 @@ import (
 )
 
 func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, error) {
+	_, err := url.Parse(addr)
+	if err != nil {
+		log.Println("Ошибка парсера", err.Error())
+		log.Fatal(err)
+	}
+
 	byt, err := json.MarshalIndent(m, "", "")
 	if err != nil {
 		return nil, err
@@ -72,7 +81,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				delta, _ := strconv.ParseInt("1", 10, 64)
 				m.Delta = &delta
 
-				addr := addrServer + "/update/counter/PollCount/1"
+				addr := addrServer + "/update/counter/PollCount/" + "1"
 				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 				if err == nil {
@@ -234,6 +243,9 @@ func main() {
 
 	cfg := initconfig()
 
+	timer := time.NewTimer(3 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	<-timer.C
+
 	namesMetric, keysMetric := namesMetric()
 	log.Println("Массив метрик ", keysMetric)
 
@@ -244,20 +256,20 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer := time.NewTimer(15 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	timer = time.NewTimer(15 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
 	log.Println("Перед отправкой")
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
-	//sigint := make(chan os.Signal, 1)
-	//signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until a signal is received.
-	//<-sigint
+	<-sigint
 
-	timer = time.NewTimer(60 * time.Second)
-	<-timer.C
+	//timer = time.NewTimer(60 * time.Second)
+	//<-timer.C
 
 	cancel()
 
