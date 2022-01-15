@@ -9,12 +9,10 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
-	"syscall"
 	"time"
 
 	"encoding/json"
@@ -142,7 +140,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
-
+	log.Println("перед циклом " + cfg.addrServer)
 	for { //i := 0; i < 40; i++ {
 
 		select {
@@ -257,10 +255,11 @@ func main() {
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
+	log.Println("Перед отправкой")
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
-	sigint := make(chan os.Signal, 1)
-	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	//sigint := make(chan os.Signal, 1)
+	//signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	// Block until a signal is received.
 	//<-sigint
 
