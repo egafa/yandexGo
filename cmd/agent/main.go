@@ -30,11 +30,10 @@ func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, 
 	}
 
 	req, _ := http.NewRequest(method, addr, bytes.NewBuffer(byt))
-
-	log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
-
 	req.Header.Set("Content-Type", "application/json")
 	req.Body.Close()
+
+	log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
 
 	//if loger {
 	//	infoLog.Printf("Request text: %s\n", addr+string(byt))
