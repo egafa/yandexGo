@@ -243,9 +243,6 @@ func main() {
 
 	cfg := initconfig()
 
-	timer := time.NewTimer(3 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
-	<-timer.C
-
 	namesMetric, keysMetric := namesMetric()
 	log.Println("Массив метрик ", keysMetric)
 
@@ -256,7 +253,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(15 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	timer := time.NewTimer(30 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
