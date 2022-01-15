@@ -187,6 +187,8 @@ func main() {
 		log.Fatalf("HTTP server ListenAndServe: %v", err)
 	}
 
+	log.Print("Запуск сервера HTTP")
+
 	<-idleConnsClosed
 
 	SaveMapMetric(mapMetric, cfg)
