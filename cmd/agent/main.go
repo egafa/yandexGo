@@ -281,6 +281,8 @@ func namesMetric() (map[string]string, []string) {
 		switch typeNаme {
 		case "uint64":
 			namesMetric[strNаme] = "gauge" //"counter"
+		case "uint32":
+			namesMetric[strNаme] = "gauge" //"counter"
 		case "float64":
 			namesMetric[strNаme] = "gauge"
 		default:
