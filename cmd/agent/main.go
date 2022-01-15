@@ -148,9 +148,18 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			{
 
 				resp, err := client.Do(textReq)
-				body, _ := ioutil.ReadAll(textReq.Body)
-				respBody, _ := ioutil.ReadAll(resp.Body)
-				log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + string(body) + " Ответ " + string(respBody))
+				if err != nil {
+					log.Println("Ошиибка отравки запроса агента " + textReq.Method + "  " + textReq.URL.String() + err.Error())
+				} else {
+
+					respBody, errResp := ioutil.ReadAll(resp.Body)
+					if errResp != nil {
+						log.Println("Ошиибка получения тела ответа " + errResp.Error())
+					}
+					log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + " Ответ " + string(respBody))
+
+				}
+
 				//if cfg.log {
 				//	infoLog.Printf("Request text: %s\n", textReq.URL)
 				//}
