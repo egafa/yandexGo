@@ -24,17 +24,20 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 )
 
-func newRequest(m interface{}, addr, method string, log bool, infoLog *log.Logger) (*http.Request, error) {
+func newRequest(m interface{}, addr, method string, loger bool, infoLog *log.Logger) (*http.Request, error) {
 	byt, err := json.MarshalIndent(m, "", "")
 	if err != nil {
 		return nil, err
 	}
 
 	req, _ := http.NewRequest(method, addr, bytes.NewBuffer(byt))
+
+	log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Body.Close()
 
-	if log {
+	if loger {
 		infoLog.Printf("Request text: %s\n", addr+string(byt))
 	}
 
@@ -53,7 +56,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 51; i++ {
+	for i := 0; i < 500; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -146,7 +149,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				resp, err := client.Do(textReq)
 				body, _ := ioutil.ReadAll(textReq.Body)
-				log.Println("Запрос агента " + textReq.Method + "  " + textReq.URL.String() + string(body))
+				respBody, _ := ioutil.ReadAll(resp.Body)
+				log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + string(body) + " Ответ " + string(respBody))
 				if cfg.log {
 					infoLog.Printf("Request text: %s\n", textReq.URL)
 				}
@@ -194,7 +198,7 @@ func initconfig() cfg {
 		cfg.reportInterval = 2
 	}
 	if cfg.timeout == 0 {
-		cfg.timeout = 2
+		cfg.timeout = 3
 	}
 
 	ex, err := os.Executable()
@@ -258,7 +262,7 @@ func main() {
 	// Block until a signal is received.
 	//<-sigint
 
-	timer = time.NewTimer(30 * time.Second)
+	timer = time.NewTimer(60 * time.Second)
 	<-timer.C
 
 	cancel()

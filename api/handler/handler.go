@@ -43,10 +43,14 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
 				m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 				log.Print(logtext + " Обработана метрика " + string(body))
 
 			case "counter":
 				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 				log.Print(logtext + " Обработана метрика " + string(body))
 
 			default:
