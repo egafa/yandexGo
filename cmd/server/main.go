@@ -72,7 +72,7 @@ func initconfig() cfg {
 		cfg.STORE_FILE = exPath + cfg.STORE_FILE
 	}
 
-	log.Printf("cfg.STORE_FILE: %v", cfg.STORE_FILE)
+	//log.Printf("cfg.STORE_FILE: %v", cfg.STORE_FILE)
 	//*/
 
 	return cfg
@@ -182,16 +182,16 @@ func main() {
 		close(idleConnsClosed)
 	}()
 
+	log.Print("Запуск сервера HTTP")
+
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		// Error starting or closing listener:
 		log.Fatalf("HTTP server ListenAndServe: %v", err)
 	}
 
-	log.Print("Запуск сервера HTTP")
-
 	<-idleConnsClosed
 
-	SaveMapMetric(mapMetric, cfg)
+	//SaveMapMetric(mapMetric, cfg)
 	log.Print("HTTP server close")
 
 }
