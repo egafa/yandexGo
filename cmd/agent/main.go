@@ -24,7 +24,7 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 )
 
-func newRequest(m interface{}, addr, method string, loger bool, infoLog *log.Logger) (*http.Request, error) {
+func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, error) {
 	byt, err := json.MarshalIndent(m, "", "")
 	if err != nil {
 		return nil, err
@@ -37,23 +37,24 @@ func newRequest(m interface{}, addr, method string, loger bool, infoLog *log.Log
 	req.Header.Set("Content-Type", "application/json")
 	req.Body.Close()
 
-	if loger {
-		infoLog.Printf("Request text: %s\n", addr+string(byt))
-	}
+	//if loger {
+	//	infoLog.Printf("Request text: %s\n", addr+string(byt))
+	//}
 
 	return req, nil
 }
 
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
-	//var m model.Metrics
 
-	f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
+	/*
+		f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
+		infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+	*/
 
-	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
 	addrServer := cfg.addrServer
 
 	for i := 0; i < 500; i++ {
@@ -74,7 +75,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				m.Delta = &delta
 
 				addr := addrServer + "/update/counter/PollCount/1"
-				req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 				if err == nil {
 					dataChannel <- req
 				}
@@ -87,7 +89,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				m.Value = &mValue
 
 				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
-				req, err = newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
 				if err == nil {
 					dataChannel <- req
 				}
@@ -110,7 +112,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 					}
 
 					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
-					req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+					//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+					req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 					if err == nil {
 						dataChannel <- req
 					}
@@ -127,13 +130,15 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	var textReq *http.Request
 	//var m model.Metrics
 
-	f, err := os.OpenFile(cfg.dirname+"\\textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
+	/*
+		f, err := os.OpenFile(cfg.dirname+"\\textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
 
-	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+		infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+	*/
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
@@ -143,25 +148,22 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 		select {
 		case textReq = <-dataChannel:
 			{
-				//req, _ := http.NewRequest(http.MethodPost, textReq, nil)
-				//req.Header.Add("Content-Type", "application/json")
-				//resp, err := client.Do(req)
 
 				resp, err := client.Do(textReq)
 				body, _ := ioutil.ReadAll(textReq.Body)
 				respBody, _ := ioutil.ReadAll(resp.Body)
 				log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + string(body) + " Ответ " + string(respBody))
-				if cfg.log {
-					infoLog.Printf("Request text: %s\n", textReq.URL)
-				}
+				//if cfg.log {
+				//	infoLog.Printf("Request text: %s\n", textReq.URL)
+				//}
 
 				if err != nil {
 					continue
 				}
 
-				if cfg.log {
-					infoLog.Printf("Status: " + resp.Status)
-				}
+				//if cfg.log {
+				//	infoLog.Printf("Status: " + resp.Status)
+				//}
 			}
 		default:
 			stopchanel <- 0
