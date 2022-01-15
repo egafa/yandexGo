@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strconv"
 	"time"
 
@@ -42,7 +43,7 @@ func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, 
 	return req, nil
 }
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan *http.Request) {
 
 	/*
 		f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -93,12 +94,15 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				}
 
 				v := reflect.ValueOf(ms)
-				for key, typeNаme := range namesMetric {
+				for i := 0; i < len(keysMetric); i++ {
+					//	namesMetric1[keys[i]] = namesMetric[keys[i]]
 
-					val := v.FieldByName(key).Interface()
+					//for key, typeNаme := range namesMetric {
 
+					val := v.FieldByName(keysMetric[i]).Interface()
+					typeNаme := namesMetric[keysMetric[i]]
 					m := model.Metrics{}
-					m.ID = key
+					m.ID = keysMetric[i]
 					m.MType = typeNаme
 					if typeNаme == "gauge" {
 						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
@@ -109,7 +113,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 						//continue
 					}
 
-					addr := addrServer + "/update/" + typeNаme + "/" + key + "/" + fmt.Sprintf("%v", val)
+					addr := addrServer + "/update/" + typeNаme + "/" + keysMetric[i] + "/" + fmt.Sprintf("%v", val)
 					//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 					req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 					if err == nil {
@@ -231,6 +235,37 @@ func main() {
 
 	cfg := initconfig()
 
+	namesMetric, keysMetric := namesMetric()
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	//dataChannel := make(chan string, len(namesMetric)*100)
+	dataChannel := make(chan *http.Request, len(namesMetric)*100)
+
+	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
+
+	timer := time.NewTimer(1 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	<-timer.C
+
+	stopchanel := make(chan int, 1)
+	log.Println("Перед отправкой")
+	go sendMetric(ctx, dataChannel, stopchanel, cfg)
+
+	//sigint := make(chan os.Signal, 1)
+	//signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	// Block until a signal is received.
+	//<-sigint
+
+	timer = time.NewTimer(60 * time.Second)
+	<-timer.C
+
+	cancel()
+
+	<-stopchanel
+
+}
+
+func namesMetric() (map[string]string, []string) {
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
 
@@ -253,30 +288,16 @@ func main() {
 
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	keys := make([]string, 0, len(namesMetric))
+	for k := range namesMetric {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 
-	//dataChannel := make(chan string, len(namesMetric)*100)
-	dataChannel := make(chan *http.Request, len(namesMetric)*100)
+	//namesMetric1 := make(map[string]string)
+	//for i := 0; i < len(keys); i++ {
+	//	namesMetric1[keys[i]] = namesMetric[keys[i]]
+	//}
 
-	go formMetric(ctx, cfg, namesMetric, dataChannel)
-
-	timer := time.NewTimer(1 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
-	<-timer.C
-
-	stopchanel := make(chan int, 1)
-	log.Println("Перед отправкой")
-	go sendMetric(ctx, dataChannel, stopchanel, cfg)
-
-	//sigint := make(chan os.Signal, 1)
-	//signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	// Block until a signal is received.
-	//<-sigint
-
-	timer = time.NewTimer(60 * time.Second)
-	<-timer.C
-
-	cancel()
-
-	<-stopchanel
-
+	return namesMetric, keys
 }

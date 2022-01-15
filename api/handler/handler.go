@@ -42,13 +42,13 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
-				m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
+				m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 				log.Print(logtext + " Обработана метрика " + string(body))
 
 			case "counter":
-				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+				m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 				log.Print(logtext + " Обработана метрика " + string(body))
@@ -77,7 +77,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		case "gauge":
 			f, err := strconv.ParseFloat(valueMetric, 64)
 			if err == nil {
-				m.SaveGaugeVal(nameMetric, f)
+				m.SaveGaugeVal(strings.ToLower(nameMetric), f)
 			}
 			errConv = err
 
@@ -85,7 +85,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			i, err := strconv.ParseInt(valueMetric, 10, 64)
 
 			if err == nil {
-				m.SaveCounterVal(nameMetric, i)
+				m.SaveCounterVal(strings.ToLower(nameMetric), i)
 			}
 			errConv = err
 
@@ -137,46 +137,17 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				return
 			}
 
-			if strings.ToLower(dataMetrics.MType) != "gauge" && strings.ToLower(dataMetrics.MType) != "counter" {
-				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-				log.Print(logtext + " Не определен тип метрики")
-				return
-			}
-
-			if strings.ToLower(dataMetrics.MType) == "gauge" {
-				val, ok := m.GetGaugeVal(dataMetrics.ID)
-				if ok {
-					dataMetrics.Value = &val
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-					http.Error(w, "Не найдена метрика", http.StatusNotFound)
-					log.Print(logtext + " Не найдена метрика " + string(body))
-					return
-				}
-			}
-
-			if strings.ToLower(dataMetrics.MType) == "counter" {
-				val, ok := m.GetCounterVal(dataMetrics.ID)
-				if ok {
-					dataMetrics.Delta = &val
-				} else {
-					w.WriteHeader(http.StatusNotFound)
-					http.Error(w, "Не найдена метрика", http.StatusNotFound)
-					log.Print(logtext + " Не найдена метрика " + string(body))
-					return
-				}
-			}
-
 			var ok bool
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
-				val, ok := m.GetGaugeVal(dataMetrics.ID)
+				val, ok1 := m.GetGaugeVal(strings.ToLower(dataMetrics.ID))
+				ok = ok1
 				if ok {
 					dataMetrics.Value = &val
 				}
 			case "counter":
-				val, ok := m.GetCounterVal(dataMetrics.ID)
+				val, ok1 := m.GetCounterVal(strings.ToLower(dataMetrics.ID))
+				ok = ok1
 				if ok {
 					dataMetrics.Delta = &val
 				}
@@ -194,6 +165,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 					w.Header().Set("Content-Type", "application/json")
 					w.Write(byt)
 					w.WriteHeader(http.StatusOK)
+					log.Print(logtext + " Получено знаачене метрики" + string(byt))
 					return
 				}
 			}
@@ -212,14 +184,14 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		switch strings.ToLower(typeMetric) {
 		case "gauge":
-			val, ok := m.GetGaugeVal(nameMetric)
+			val, ok := m.GetGaugeVal(strings.ToLower(nameMetric))
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
 				return
 			}
 		case "counter":
-			val, ok := m.GetCounterVal(nameMetric)
+			val, ok := m.GetCounterVal(strings.ToLower(nameMetric))
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
