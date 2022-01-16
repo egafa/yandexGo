@@ -256,8 +256,31 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(15 * time.Second)
-	<-timer.C
+	//timer = time.NewTimer(17 * time.Second)
+	//<-timer.C
+
+	m := model.Metrics{}
+	m.ID = "PollCount"
+	m.MType = "counter"
+	delta, _ := strconv.ParseInt("1", 10, 64)
+	m.Delta = &delta
+
+	addr := cfg.addrServer + "/update/counter/PollCount/" + "1"
+	//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+	req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+	if err != nil {
+		log.Fatal("Неправильный запрос")
+	}
+
+	client := &http.Client{}
+	client.Timeout = time.Second * time.Duration(cfg.timeout)
+	for {
+		_, err := client.Do(req)
+		if err == nil {
+			break
+		}
+
+	}
 
 	stopchanel := make(chan int, 1)
 	log.Println("Перед отправкой")
