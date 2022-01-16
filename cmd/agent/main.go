@@ -64,7 +64,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 5; i++ {
 
 		select {
 		case <-ctx.Done():
