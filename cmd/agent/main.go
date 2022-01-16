@@ -64,7 +64,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 50; i++ {
+	for { //i := 0; i < 50; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -189,7 +189,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			stopchanel <- 0
 
 		}
-		//time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
+		time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
 
 	}
 
@@ -217,7 +217,7 @@ func initconfig() cfg {
 		cfg.pollInterval = 2
 	}
 	if cfg.reportInterval == 0 {
-		cfg.reportInterval = 2
+		cfg.reportInterval = 6
 	}
 	if cfg.timeout == 0 {
 		cfg.timeout = 3
