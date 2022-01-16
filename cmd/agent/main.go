@@ -152,7 +152,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
-	log.Println("перед циклом " + cfg.addrServer)
+	//log.Println("перед циклом " + cfg.addrServer)
 	for { //i := 0; i < 40; i++ {
 
 		select {
@@ -161,8 +161,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				resp, err := client.Do(textReq)
 				if err != nil {
-					log.Println("Ошиибка отравки запроса агента " + textReq.Method + "  " + textReq.URL.String() + err.Error())
-					//dataChannel <- textReq
+					log.Println("Отправка запроса агента Ошибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
+					dataChannel <- textReq
 				} else {
 
 					respBody, errResp := ioutil.ReadAll(resp.Body)
@@ -258,7 +258,7 @@ func main() {
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
-	log.Println("Перед отправкой")
+	//log.Println("Перед отправкой")
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
 	sigint := make(chan os.Signal, 1)
