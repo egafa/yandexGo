@@ -161,7 +161,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				resp, err := client.Do(textReq)
 				if err != nil {
-					log.Println("Ошиибка отравки запроса агента " + textReq.Method + "  " + textReq.URL.String() + err.Error())
+					log.Println("- Отправка запроса агента Ошиибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
+					dataChannel <- textReq
 				} else {
 
 					respBody, errResp := ioutil.ReadAll(resp.Body)
@@ -255,7 +256,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(15 * time.Second)
+	timer = time.NewTimer(2 * time.Second)
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
