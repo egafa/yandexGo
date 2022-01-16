@@ -254,7 +254,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer := time.NewTimer(30 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	timer := time.NewTimer(1 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
