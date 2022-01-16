@@ -251,7 +251,6 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	//dataChannel := make(chan string, len(namesMetric)*100)
 	dataChannel := make(chan *http.Request, len(namesMetric)*100)
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
