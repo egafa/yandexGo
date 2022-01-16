@@ -162,7 +162,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 				resp, err := client.Do(textReq)
 				if err != nil {
 					log.Println("Ошиибка отравки запроса агента " + textReq.Method + "  " + textReq.URL.String() + err.Error())
-					dataChannel <- textReq
+					//dataChannel <- textReq
 				} else {
 
 					respBody, errResp := ioutil.ReadAll(resp.Body)
