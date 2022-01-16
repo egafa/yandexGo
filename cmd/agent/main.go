@@ -256,7 +256,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(2 * time.Second)
+	timer = time.NewTimer(15 * time.Second)
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
