@@ -256,7 +256,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(15 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	timer = time.NewTimer(15 * time.Second)
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
@@ -307,11 +307,6 @@ func namesMetric() (map[string]string, []string) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-
-	//namesMetric1 := make(map[string]string)
-	//for i := 0; i < len(keys); i++ {
-	//	namesMetric1[keys[i]] = namesMetric[keys[i]]
-	//}
 
 	return namesMetric, keys
 }
