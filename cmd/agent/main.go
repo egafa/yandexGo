@@ -75,32 +75,6 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
-				m := model.Metrics{}
-				m.ID = "PollCount"
-				m.MType = "counter"
-				delta, _ := strconv.ParseInt("1", 10, 64)
-				m.Delta = &delta
-
-				addr := addrServer + "/update/counter/PollCount/" + "1"
-				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
-				if err == nil {
-					dataChannel <- req
-				}
-
-				m.ID = "RandomValue"
-				m.MType = "gauge"
-				delta, _ = strconv.ParseInt("0", 10, 64)
-				m.Delta = &delta
-				mValue := rand.Float64()
-				m.Value = &mValue
-
-				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
-				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
-				if err == nil {
-					dataChannel <- req
-				}
-
 				v := reflect.ValueOf(ms)
 				for i := 0; i < len(keysMetric); i++ {
 					//	namesMetric1[keys[i]] = namesMetric[keys[i]]
@@ -128,6 +102,31 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 						dataChannel <- req
 					}
 
+				}
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta, _ := strconv.ParseInt("1", 10, 64)
+				m.Delta = &delta
+
+				addr := addrServer + "/update/counter/PollCount/" + "1"
+				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+				if err == nil {
+					dataChannel <- req
+				}
+
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				delta, _ = strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta
+				mValue := rand.Float64()
+				m.Value = &mValue
+
+				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
+				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
+				if err == nil {
+					dataChannel <- req
 				}
 
 				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
@@ -260,12 +259,12 @@ func main() {
 	//<-timer.C
 
 	m := model.Metrics{}
-	m.ID = "PollCount"
-	m.MType = "counter"
-	delta, _ := strconv.ParseInt("1", 10, 64)
-	m.Delta = &delta
+	m.ID = keysMetric[0]
+	m.MType = "gauge"
+	delta := 0.0
+	m.Value = &delta
 
-	addr := cfg.addrServer + "/update/counter/PollCount/" + "1"
+	addr := cfg.addrServer + "/update/gauge/" + keysMetric[0] + "/0"
 	//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 	req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 	if err != nil {
