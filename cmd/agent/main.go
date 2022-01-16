@@ -64,7 +64,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 50; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -130,7 +130,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 				}
 
-				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
+				time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
