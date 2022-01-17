@@ -153,14 +153,14 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
 	log.Println("перед циклом " + cfg.addrServer)
+	var resp *http.Response
+	var err error
 	for { //i := 0; i < 40; i++ {
 
 		select {
 		case textReq = <-dataChannel:
 			{
 
-				var resp *http.Response
-				var err error
 				for i := 0; i < 2220000; i++ {
 
 					resp, err = client.Do(textReq)
@@ -171,8 +171,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 						//	log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
 					}
 
-					if i == 100000 {
-						log.Fatal("Не удалось отправить запрос после попыток", i)
+					if i == 90000 {
+						log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
 					}
 
 				}
@@ -273,7 +273,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(2 * time.Second)
+	timer = time.NewTimer(1 * time.Second)
 	<-timer.C
 
 	/*
