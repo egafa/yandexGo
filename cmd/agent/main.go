@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -26,32 +25,34 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 )
 
-func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, error) {
+type dataRequest struct {
+	addr   string
+	method string
+	body   []byte
+}
+
+func newRequest(m interface{}, addr, method string, loger bool) (dataRequest, error) {
 	_, err := url.Parse(addr)
 	if err != nil {
 		log.Println("Ошибка парсера", err.Error())
 		log.Fatal(err)
 	}
 
+	r := dataRequest{}
+
 	byt, err := json.MarshalIndent(m, "", "")
 	if err != nil {
-		return nil, err
+		return r, err
 	}
 
-	req, _ := http.NewRequest(method, addr, bytes.NewBuffer(byt))
-	req.Header.Set("Content-Type", "application/json")
-	req.Body.Close()
+	r.addr = addr
+	r.method = method
+	r.body = byt
 
-	//log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
-
-	//if loger {
-	//	infoLog.Printf("Request text: %s\n", addr+string(byt))
-	//}
-
-	return req, nil
+	return r, nil
 }
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan *http.Request) {
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan dataRequest) {
 
 	/*
 		f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -136,8 +137,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel chan int, cfg cfg) {
-	var textReq *http.Request
+func sendMetric(ctx context.Context, dataChannel chan dataRequest, stopchanel chan int, cfg cfg) {
+	var textReq dataRequest
 	//var m model.Metrics
 
 	/*
@@ -154,9 +155,6 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
 	log.Println("перед циклом " + cfg.addrServer)
 
-	var resp1 *http.Response
-	//var err error
-
 	for { //i := 0; i < 40; i++ {
 
 		select {
@@ -165,14 +163,26 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				for i := 0; i < 2220000; i++ {
 
-					resp, err := client.Do(textReq)
-					resp1 = resp
+					req, errReq := http.NewRequest(textReq.method, textReq.addr, bytes.NewBuffer(textReq.body))
+					if errReq != nil {
+						log.Fatal("Не удалось сформировать запрос ", errReq)
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					_, err := client.Do(req)
+					//reqpBody, _ := ioutil.ReadAll(resp.Body)
 					if err == nil {
-						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
+
+						//respBody, errResp := ioutil.ReadAll(resp1.Body)
+						//if errResp != nil {
+						//	log.Println("Ошиибка получения тела ответа " + errResp.Error())
+						//}
+
+						log.Println("Отправка запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " через ", i, "попыток")
 						break
 					} else {
 						if i%10 == 0 {
-							log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), " Ошибка ", err.Error(), i, "попыток")
+							log.Println("Ошибка Отправки запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " Ошибка ", err.Error(), i, "попыток")
 						}
 					}
 
@@ -182,28 +192,6 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				}
 
-				/*
-					if err != nil {
-						log.Println("- Отправка запроса агента Ошиибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
-						//dataChannel <- textReq
-					} else {
-				*/
-
-				respBody, errResp := ioutil.ReadAll(resp1.Body)
-				if errResp != nil {
-					log.Println("Ошиибка получения тела ответа " + errResp.Error())
-				}
-				log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + " Ответ " + string(respBody))
-
-				//}
-
-				//if cfg.log {
-				//	infoLog.Printf("Request text: %s\n", textReq.URL)
-				//}
-
-				//if cfg.log {
-				//	infoLog.Printf("Status: " + resp.Status)
-				//}
 			}
 		default:
 			stopchanel <- 0
@@ -272,7 +260,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	dataChannel := make(chan *http.Request, len(namesMetric)*100)
+	dataChannel := make(chan dataRequest, len(namesMetric)*100)
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
