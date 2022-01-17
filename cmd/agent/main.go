@@ -42,7 +42,7 @@ func newRequest(m interface{}, addr, method string, loger bool) (*http.Request, 
 	req.Header.Set("Content-Type", "application/json")
 	req.Body.Close()
 
-	log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
+	//log.Println("Формирование запроса агента " + req.Method + "  " + req.URL.String() + string(byt))
 
 	//if loger {
 	//	infoLog.Printf("Request text: %s\n", addr+string(byt))
@@ -162,16 +162,16 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			{
 
 				for i := 0; i < 2220000; i++ {
-
+					err = nil
 					resp, err = client.Do(textReq)
 					if err == nil {
 						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
 						break
-						//} else {
-						//	log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
+					} else {
+						log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
 					}
 
-					if i == 90000 {
+					if i == 1000 {
 						log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
 					}
 
