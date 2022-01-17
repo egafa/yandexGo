@@ -169,7 +169,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 						break
 					} else {
 						if i%100 == 0 {
-							log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
+							log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), "Status ", resp.Status, err.Error(), i, "попыток")
 						}
 					}
 
