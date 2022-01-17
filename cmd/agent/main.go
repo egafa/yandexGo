@@ -161,14 +161,14 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				var resp *http.Response
 				var err error
-				for i := 0; i < 222; i++ {
+				for i := 0; i < 222000; i++ {
 
 					resp, err = client.Do(textReq)
 					if err == nil {
 						break
 					}
 
-					if i == 220 {
+					if i == 2200 {
 						log.Fatal("Не удалось отправить запрос после 220 попыток")
 					}
 
