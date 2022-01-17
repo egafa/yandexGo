@@ -75,6 +75,32 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta, _ := strconv.ParseInt("1", 10, 64)
+				m.Delta = &delta
+
+				addr := addrServer + "/update/counter/PollCount/" + "1"
+				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+				if err == nil {
+					dataChannel <- req
+				}
+
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				delta, _ = strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta
+				mValue := rand.Float64()
+				m.Value = &mValue
+
+				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
+				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
+				if err == nil {
+					dataChannel <- req
+				}
+
 				v := reflect.ValueOf(ms)
 				for i := 0; i < len(keysMetric); i++ {
 					//	namesMetric1[keys[i]] = namesMetric[keys[i]]
@@ -102,31 +128,6 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 						dataChannel <- req
 					}
 
-				}
-				m := model.Metrics{}
-				m.ID = "PollCount"
-				m.MType = "counter"
-				delta, _ := strconv.ParseInt("1", 10, 64)
-				m.Delta = &delta
-
-				addr := addrServer + "/update/counter/PollCount/" + "1"
-				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
-				if err == nil {
-					dataChannel <- req
-				}
-
-				m.ID = "RandomValue"
-				m.MType = "gauge"
-				delta, _ = strconv.ParseInt("0", 10, 64)
-				m.Delta = &delta
-				mValue := rand.Float64()
-				m.Value = &mValue
-
-				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
-				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
-				if err == nil {
-					dataChannel <- req
 				}
 
 				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
@@ -158,7 +159,21 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 		case textReq = <-dataChannel:
 			{
 
-				resp, err := client.Do(textReq)
+				var resp *http.Response
+				var err error
+				for i := 0; i < 22; i++ {
+
+					resp, err = client.Do(textReq)
+					if err == nil {
+						break
+					}
+
+					if i == 20 {
+						log.Fatal("Не удалось отправить запрос после 20 попыток")
+					}
+
+				}
+
 				if err != nil {
 					log.Println("- Отправка запроса агента Ошиибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
 					//dataChannel <- textReq
@@ -255,31 +270,33 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	//timer = time.NewTimer(17 * time.Second)
-	//<-timer.C
+	timer = time.NewTimer(1 * time.Second)
+	<-timer.C
 
-	m := model.Metrics{}
-	m.ID = keysMetric[0]
-	m.MType = "gauge"
-	delta := 0.0
-	m.Value = &delta
+	/*
+		m := model.Metrics{}
+		m.ID = keysMetric[0]
+		m.MType = "gauge"
+		delta := 0.0
+		m.Value = &delta
 
-	addr := cfg.addrServer + "/update/gauge/" + keysMetric[0] + "/0"
-	//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-	req, err := newRequest(m, addr, http.MethodPost, cfg.log)
-	if err != nil {
-		log.Fatal("Неправильный запрос")
-	}
-
-	client := &http.Client{}
-	client.Timeout = time.Second * time.Duration(cfg.timeout)
-	for {
-		_, err := client.Do(req)
-		if err == nil {
-			break
+		addr := cfg.addrServer + "/update/gauge/" + keysMetric[0] + "/0"
+		//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
+		req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+		if err != nil {
+			log.Fatal("Неправильный запрос")
 		}
 
-	}
+		client := &http.Client{}
+		client.Timeout = time.Second * time.Duration(cfg.timeout)
+		for {
+			_, err := client.Do(req)
+			if err == nil {
+				break
+			}
+
+		}
+	*/
 
 	stopchanel := make(chan int, 1)
 	log.Println("Перед отправкой")
