@@ -64,7 +64,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -169,8 +169,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 						break
 					}
 
-					if i == 2200 {
-						log.Fatal("Не удалось отправить запрос после 220 попыток")
+					if i == 22000 {
+						log.Fatal("Не удалось отправить запрос после попыток", i)
 					}
 
 				}
@@ -300,7 +300,7 @@ func main() {
 	*/
 
 	stopchanel := make(chan int, 1)
-	log.Println("Перед отправкой")
+	//log.Println("Перед отправкой")
 	go sendMetric(ctx, dataChannel, stopchanel, cfg)
 
 	sigint := make(chan os.Signal, 1)
