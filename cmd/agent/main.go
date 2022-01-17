@@ -165,6 +165,7 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 					resp, err = client.Do(textReq)
 					if err == nil {
+						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
 						break
 					}
 
