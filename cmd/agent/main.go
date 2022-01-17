@@ -167,8 +167,8 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 					if err == nil {
 						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
 						break
-					} else {
-						log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
+						//} else {
+						//	log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
 					}
 
 					if i == 100000 {
@@ -273,7 +273,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(1 * time.Second)
+	timer = time.NewTimer(2 * time.Second)
 	<-timer.C
 
 	/*
