@@ -153,8 +153,10 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
 	log.Println("перед циклом " + cfg.addrServer)
-	var resp *http.Response
-	var err error
+
+	var resp1 *http.Response
+	//var err error
+
 	for { //i := 0; i < 40; i++ {
 
 		select {
@@ -162,13 +164,14 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 			{
 
 				for i := 0; i < 2220000; i++ {
-					err = nil
-					resp, err = client.Do(textReq)
+
+					resp, err := client.Do(textReq)
+					resp1 = resp
 					if err == nil {
 						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
 						break
 					} else {
-						if i%100 == 0 {
+						if i%10 == 0 {
 							log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), "Status ", resp.Status, err.Error(), i, "попыток")
 						}
 					}
@@ -179,26 +182,24 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 
 				}
 
-				if err != nil {
-					log.Println("- Отправка запроса агента Ошиибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
-					//dataChannel <- textReq
-				} else {
+				/*
+					if err != nil {
+						log.Println("- Отправка запроса агента Ошиибка " + textReq.Method + "  " + textReq.URL.String() + err.Error())
+						//dataChannel <- textReq
+					} else {
+				*/
 
-					respBody, errResp := ioutil.ReadAll(resp.Body)
-					if errResp != nil {
-						log.Println("Ошиибка получения тела ответа " + errResp.Error())
-					}
-					log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + " Ответ " + string(respBody))
-
+				respBody, errResp := ioutil.ReadAll(resp1.Body)
+				if errResp != nil {
+					log.Println("Ошиибка получения тела ответа " + errResp.Error())
 				}
+				log.Println("Отправка запроса агента " + textReq.Method + "  " + textReq.URL.String() + " Ответ " + string(respBody))
+
+				//}
 
 				//if cfg.log {
 				//	infoLog.Printf("Request text: %s\n", textReq.URL)
 				//}
-
-				if err != nil {
-					continue
-				}
 
 				//if cfg.log {
 				//	infoLog.Printf("Status: " + resp.Status)
