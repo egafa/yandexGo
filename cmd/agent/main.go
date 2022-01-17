@@ -168,10 +168,12 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 						log.Println("Отправка запроса агента "+textReq.Method+"  "+textReq.URL.String()+" через ", i, "попыток")
 						break
 					} else {
-						log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
+						if i%100 == 0 {
+							log.Println("Ошибка Отправки запроса агента "+textReq.Method+"  "+textReq.URL.String(), err, i, "попыток")
+						}
 					}
 
-					if i == 1000 {
+					if i == 5000 {
 						log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
 					}
 
