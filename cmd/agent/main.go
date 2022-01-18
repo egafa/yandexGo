@@ -52,7 +52,7 @@ func newRequest(m interface{}, addr, method string, loger bool) (dataRequest, er
 	return r, nil
 }
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan dataRequest) {
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	/*
 		f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -76,6 +76,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
+				sliceMetric := make([]dataRequest, len(keysMetric)+2)
+
 				m := model.Metrics{}
 				m.ID = "PollCount"
 				m.MType = "counter"
@@ -86,7 +88,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 				if err == nil {
-					dataChannel <- req
+					sliceMetric[0] = req
+					//dataChannel <- req
 				}
 
 				m.ID = "RandomValue"
@@ -99,7 +102,8 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
 				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
 				if err == nil {
-					dataChannel <- req
+					sliceMetric[1] = req
+					//dataChannel <- req
 				}
 
 				v := reflect.ValueOf(ms)
@@ -126,19 +130,21 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 					//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 					req, err := newRequest(m, addr, http.MethodPost, cfg.log)
 					if err == nil {
-						dataChannel <- req
+						sliceMetric[i+2] = req
+						//dataChannel <- req
 					}
 
 				}
 
+				dataChannel <- sliceMetric
 				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan dataRequest, stopchanel chan int, cfg cfg) {
-	var textReq dataRequest
+func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg cfg) {
+	var textReq []dataRequest
 	//var m model.Metrics
 
 	/*
@@ -153,51 +159,71 @@ func sendMetric(ctx context.Context, dataChannel chan dataRequest, stopchanel ch
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
-	log.Println("перед циклом " + cfg.addrServer)
+	log.Println("перед циклом отправки " + cfg.addrServer)
 
 	for { //i := 0; i < 40; i++ {
 
 		select {
+		case <-ctx.Done():
+			return
 		case textReq = <-dataChannel:
 			{
 
-				for i := 0; i < 2220000; i++ {
+				for j := 0; j < len(textReq); j++ {
 
-					req, errReq := http.NewRequest(textReq.method, textReq.addr, bytes.NewBuffer(textReq.body))
+					req, errReq := http.NewRequest(textReq[j].method, textReq[j].addr, bytes.NewBuffer(textReq[j].body))
 					if errReq != nil {
 						log.Fatal("Не удалось сформировать запрос ", errReq)
 					}
 					req.Header.Set("Content-Type", "application/json")
 
 					_, err := client.Do(req)
-					//reqpBody, _ := ioutil.ReadAll(resp.Body)
 					if err == nil {
-
-						//respBody, errResp := ioutil.ReadAll(resp1.Body)
-						//if errResp != nil {
-						//	log.Println("Ошиибка получения тела ответа " + errResp.Error())
-						//}
-
-						log.Println("Отправка запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " через ", i, "попыток")
-						break
-					} else {
-						if i%10 == 0 {
-							log.Println("Ошибка Отправки запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " Ошибка ", err.Error(), i, "попыток")
-						}
-					}
-
-					if i == 5000 {
-						log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
+						log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
 					}
 
 				}
 
+				time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
+
+				/*
+					for i := 0; i < 2220000; i++ {
+
+						req, errReq := http.NewRequest(textReq.method, textReq.addr, bytes.NewBuffer(textReq.body))
+						if errReq != nil {
+							log.Fatal("Не удалось сформировать запрос ", errReq)
+						}
+						req.Header.Set("Content-Type", "application/json")
+
+						_, err := client.Do(req)
+						//reqpBody, _ := ioutil.ReadAll(resp.Body)
+						if err == nil {
+
+							//respBody, errResp := ioutil.ReadAll(resp1.Body)
+							//if errResp != nil {
+							//	log.Println("Ошиибка получения тела ответа " + errResp.Error())
+							//}
+
+							log.Println("Отправка запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " через ", i, "попыток")
+							break
+						} else {
+							if i%10 == 0 {
+								log.Println("Ошибка Отправки запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " Ошибка ", err.Error(), i, "попыток")
+							}
+						}
+
+						if i == 5000 {
+							log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
+						}
+
+					}
+				*/
+
 			}
 		default:
-			stopchanel <- 0
-
+			//stopchanel <- 0
+			continue
 		}
-		//time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
 
 	}
 
@@ -225,7 +251,7 @@ func initconfig() cfg {
 		cfg.pollInterval = 2
 	}
 	if cfg.reportInterval == 0 {
-		cfg.reportInterval = 2
+		cfg.reportInterval = 10
 	}
 	if cfg.timeout == 0 {
 		cfg.timeout = 3
@@ -249,6 +275,7 @@ func initconfig() cfg {
 }
 
 func main() {
+	log.Println("Запуск агента")
 
 	cfg := initconfig()
 
@@ -260,37 +287,12 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	dataChannel := make(chan dataRequest, len(namesMetric)*100)
+	dataChannel := make(chan []dataRequest, len(namesMetric)*100)
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
 	timer = time.NewTimer(1 * time.Second)
 	<-timer.C
-
-	/*
-		m := model.Metrics{}
-		m.ID = keysMetric[0]
-		m.MType = "gauge"
-		delta := 0.0
-		m.Value = &delta
-
-		addr := cfg.addrServer + "/update/gauge/" + keysMetric[0] + "/0"
-		//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-		req, err := newRequest(m, addr, http.MethodPost, cfg.log)
-		if err != nil {
-			log.Fatal("Неправильный запрос")
-		}
-
-		client := &http.Client{}
-		client.Timeout = time.Second * time.Duration(cfg.timeout)
-		for {
-			_, err := client.Do(req)
-			if err == nil {
-				break
-			}
-
-		}
-	*/
 
 	stopchanel := make(chan int, 1)
 	//log.Println("Перед отправкой")
@@ -305,8 +307,8 @@ func main() {
 	//<-timer.C
 
 	cancel()
-
-	<-stopchanel
+	log.Println("Стоп агента")
+	//<-stopchanel
 
 }
 
