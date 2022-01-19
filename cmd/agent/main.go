@@ -179,7 +179,7 @@ func initconfig() cfg {
 
 	if cfg.addrServer == "" {
 
-		cfg.addrServer = os.Getenv("ADDRESS") //"http://127.0.0.1:8080"
+		cfg.addrServer = "http://127.0.0.1:8080"
 	}
 
 	if cfg.pollInterval == 0 {
@@ -208,9 +208,6 @@ func main() {
 
 	cfg := initconfig()
 
-	timer := time.NewTimer(3 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
-	<-timer.C
-
 	namesMetric, keysMetric := namesMetric()
 	log.Println("Массив метрик ", keysMetric)
 
@@ -220,7 +217,7 @@ func main() {
 
 	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
 
-	timer = time.NewTimer(1 * time.Second)
+	timer := time.NewTimer(1 * time.Second)
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
