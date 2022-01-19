@@ -232,9 +232,6 @@ func main() {
 	// Block until a signal is received.
 	<-sigint
 
-	//timer = time.NewTimer(60 * time.Second)
-	//<-timer.C
-
 	cancel()
 	log.Println("Стоп агента")
 	//<-stopchanel
