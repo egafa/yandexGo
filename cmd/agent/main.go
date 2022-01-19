@@ -34,8 +34,7 @@ type dataRequest struct {
 func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 	_, err := url.Parse(addr)
 	if err != nil {
-		log.Println("Ошибка парсера", err.Error())
-		log.Fatal(err)
+		log.Fatal("Ошибка парсера URL", err.Error())
 	}
 
 	r := dataRequest{}
@@ -54,7 +53,7 @@ func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
-	addrServer := cfg.addrServer
+	urlUpdate := "http://%s/update/%s/%s/%v"
 
 	for i := 0; i < 60; i++ {
 
@@ -75,12 +74,9 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				delta, _ := strconv.ParseInt("1", 10, 64)
 				m.Delta = &delta
 
-				addr := addrServer + "/update/counter/PollCount/" + "1"
-				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				req, err := newRequest(m, addr, http.MethodPost)
+				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, delta), http.MethodPost)
 				if err == nil {
 					sliceMetric[0] = req
-					//dataChannel <- req
 				}
 
 				m.ID = "RandomValue"
@@ -90,39 +86,35 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				mValue := rand.Float64()
 				m.Value = &mValue
 
-				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
-				req, err = newRequest(m, addr, http.MethodPost)
+				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, mValue), http.MethodPost)
 				if err == nil {
 					sliceMetric[1] = req
-					//dataChannel <- req
 				}
 
 				v := reflect.ValueOf(ms)
-				for i := 0; i < len(keysMetric); i++ {
-					//	namesMetric1[keys[i]] = namesMetric[keys[i]]
 
-					//for key, typeNаme := range namesMetric {
+				for i := 0; i < len(keysMetric); i++ {
 
 					val := v.FieldByName(keysMetric[i]).Interface()
 					typeNаme := namesMetric[keysMetric[i]]
 					m := model.Metrics{}
 					m.ID = keysMetric[i]
 					m.MType = typeNаme
+
+					var addr string
 					if typeNаme == "gauge" {
 						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
 						m.Value = &f
+						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, f)
 					} else {
 						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
 						m.Delta = &i
-						//continue
+						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, i)
 					}
 
-					addr := addrServer + "/update/" + typeNаme + "/" + keysMetric[i] + "/" + fmt.Sprintf("%v", val)
-					//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
 					req, err := newRequest(m, addr, http.MethodPost)
 					if err == nil {
 						sliceMetric[i+2] = req
-						//dataChannel <- req
 					}
 
 				}
@@ -139,7 +131,6 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
-	log.Println("перед циклом отправки " + cfg.addrServer)
 
 	for { //i := 0; i < 40; i++ {
 
@@ -161,44 +152,9 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 					if err == nil {
 						log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
 					}
-
 				}
 
 				time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
-
-				/*
-					for i := 0; i < 2220000; i++ {
-
-						req, errReq := http.NewRequest(textReq.method, textReq.addr, bytes.NewBuffer(textReq.body))
-						if errReq != nil {
-							log.Fatal("Не удалось сформировать запрос ", errReq)
-						}
-						req.Header.Set("Content-Type", "application/json")
-
-						_, err := client.Do(req)
-						//reqpBody, _ := ioutil.ReadAll(resp.Body)
-						if err == nil {
-
-							//respBody, errResp := ioutil.ReadAll(resp1.Body)
-							//if errResp != nil {
-							//	log.Println("Ошиибка получения тела ответа " + errResp.Error())
-							//}
-
-							log.Println("Отправка запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " через ", i, "попыток")
-							break
-						} else {
-							if i%10 == 0 {
-								log.Println("Ошибка Отправки запроса агента "+req.Method+"  "+req.URL.String(), string(textReq.body), " Ошибка ", err.Error(), i, "попыток")
-							}
-						}
-
-						if i == 5000 {
-							log.Fatal("Не удалось отправить запрос после попыток ", i, " ошибка ", err)
-						}
-
-					}
-				*/
-
 			}
 		default:
 			//stopchanel <- 0

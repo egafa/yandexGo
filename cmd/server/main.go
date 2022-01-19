@@ -158,15 +158,6 @@ func main() {
 		Addr:    cfg.ADDRESS,
 	}
 
-	/*
-		go func() {
-			for { //i := 0; i < 25; i++ {
-				time.Sleep(time.Duration(cfg.STORE_INTERVAL) * time.Second)
-				SaveMapMetric(mapMetric, cfg)
-			}
-		}()
-	*/
-
 	idleConnsClosed := make(chan struct{})
 	go func() {
 		sigint := make(chan os.Signal, 1)
