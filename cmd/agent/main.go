@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -9,42 +10,52 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
+	"strconv"
 	"syscall"
 	"time"
+
+	"encoding/json"
+
+	"github.com/caarlos0/env/v6"
+
+	"github.com/egafa/yandexGo/api/model"
 )
 
-func newRequest(urlReq string, method string, loger bool, infoLog *log.Logger) *http.Request {
-
-	_, err := url.Parse(urlReq)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req, _ := http.NewRequest(method, urlReq, nil)
-	//req.Body.Close()
-
-	if loger {
-		infoLog.Printf("Request text: %s\n", urlReq)
-	}
-
-	return req
+type dataRequest struct {
+	addr   string
+	method string
+	body   []byte
 }
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dataChannel chan *http.Request) {
-
-	f, err := os.OpenFile("text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // логи пока решил не переделывать, в 7 инкременте задание с логами связано, в памках икремента передалаю
+func newRequest(m interface{}, addr, method string) (dataRequest, error) {
+	_, err := url.Parse(addr)
 	if err != nil {
-		log.Println(err)
+		log.Fatal("Ошибка парсера URL", err.Error())
 	}
-	defer f.Close()
 
-	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+	r := dataRequest{}
+
+	byt, err := json.MarshalIndent(m, "", "")
+	if err != nil {
+		return r, err
+	}
+
+	r.addr = addr
+	r.method = method
+	r.body = byt
+
+	return r, nil
+}
+
+func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
-	for { //i := 0; i < 3; i++ {
+	for i := 0; i < 60; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -55,39 +66,68 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, dat
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
+				sliceMetric := make([]dataRequest, len(keysMetric)+2)
+
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta, _ := strconv.ParseInt("1", 10, 64)
+				m.Delta = &delta
+
+				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, delta), http.MethodPost)
+				if err == nil {
+					sliceMetric[0] = req
+				}
+
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				delta, _ = strconv.ParseInt("0", 10, 64)
+				m.Delta = &delta
+				mValue := rand.Float64()
+				m.Value = &mValue
+
+				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, mValue), http.MethodPost)
+				if err == nil {
+					sliceMetric[1] = req
+				}
+
 				v := reflect.ValueOf(ms)
-				for key, typeNаme := range namesMetric {
 
-					val := v.FieldByName(key).Interface()
+				for i := 0; i < len(keysMetric); i++ {
 
-					// сделал отдельную функцию для формирования запроса
-					// не очень понял как прикрутить url.Parse для сборки url
-					req := newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, typeNаme, key, val), http.MethodPost, cfg.log, infoLog)
+					val := v.FieldByName(keysMetric[i]).Interface()
+					typeNаme := namesMetric[keysMetric[i]]
+					m := model.Metrics{}
+					m.ID = keysMetric[i]
+					m.MType = typeNаme
 
-					dataChannel <- req
+					var addr string
+					if typeNаme == "gauge" {
+						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
+						m.Value = &f
+						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, f)
+					} else {
+						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
+						m.Delta = &i
+						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, i)
+					}
+
+					req, err := newRequest(m, addr, http.MethodPost)
+					if err == nil {
+						sliceMetric[i+2] = req
+					}
 
 				}
 
-				dataChannel <- newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, "counter", "PollCount", 1), http.MethodPost, cfg.log, infoLog)
-
-				dataChannel <- newRequest(fmt.Sprintf(urlUpdate, cfg.addrServer, "gauge", "RandomValue", rand.Float64()), http.MethodPost, cfg.log, infoLog)
-
-				time.Sleep(time.Duration(cfg.intervalMetric) * time.Second)
+				dataChannel <- sliceMetric
+				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
 			}
 		}
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel chan int, cfg cfg) {
-	var req *http.Request
-
-	f, err := os.OpenFile("textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // логи пока решил не переделывать, в 7 инкременте задание с логами связано, в памках икремента передалаю
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-
-	infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
+func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg cfg) {
+	var textReq []dataRequest
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
@@ -95,17 +135,30 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 	for { //i := 0; i < 40; i++ {
 
 		select {
-		case req = <-dataChannel:
+		case <-ctx.Done():
+			return
+		case textReq = <-dataChannel:
 			{
 
-				resp, _ := client.Do(req)
+				for j := 0; j < len(textReq); j++ {
 
-				if cfg.log {
-					infoLog.Printf("Request text: %s %v\n", req.URL, resp.Status)
+					req, errReq := http.NewRequest(textReq[j].method, textReq[j].addr, bytes.NewBuffer(textReq[j].body))
+					if errReq != nil {
+						log.Fatal("Не удалось сформировать запрос ", errReq)
+					}
+					req.Header.Set("Content-Type", "application/json")
+
+					_, err := client.Do(req)
+					if err == nil {
+						log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
+					}
 				}
+
+				time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
 			}
 		default:
-			stopchanel <- 0
+			//stopchanel <- 0
+			continue
 		}
 
 	}
@@ -113,21 +166,82 @@ func sendMetric(ctx context.Context, dataChannel chan *http.Request, stopchanel 
 }
 
 type cfg struct {
-	addrServer     string
-	log            bool
-	intervalMetric int
+	addrServer     string `env:"ADDRESS"`
+	pollInterval   int    //`env:"POLL_INTERVAL"`
+	reportInterval int    //`env:"REPORT_INTERVAL"`
 	timeout        int
+	dirname        string
+}
+
+func initconfig() cfg {
+	var cfg cfg
+	env.Parse(&cfg)
+
+	if cfg.addrServer == "" {
+
+		cfg.addrServer = os.Getenv("ADDRESS") //"http://127.0.0.1:8080"
+	}
+
+	if cfg.pollInterval == 0 {
+		cfg.pollInterval = 2
+	}
+	if cfg.reportInterval == 0 {
+		cfg.reportInterval = 10
+	}
+	if cfg.timeout == 0 {
+		cfg.timeout = 3
+	}
+
+	ex, err := os.Executable()
+	if err != nil {
+		cfg.dirname = ""
+	} else {
+		exPath := filepath.Dir(ex)
+		cfg.dirname = exPath
+	}
+
+	return cfg
 }
 
 func main() {
+	log.Println("Запуск агента")
 
-	cfg := cfg{
-		addrServer:     "127.0.0.1:8080",
-		log:            false,
-		intervalMetric: 4,
-		timeout:        3,
-	}
+	cfg := initconfig()
 
+	timer := time.NewTimer(3 * time.Second) // Горутину по отправке метрик создаем с задержкой в две секунды
+	<-timer.C
+
+	namesMetric, keysMetric := namesMetric()
+	log.Println("Массив метрик ", keysMetric)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	dataChannel := make(chan []dataRequest, len(namesMetric)*100)
+
+	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
+
+	timer = time.NewTimer(1 * time.Second)
+	<-timer.C
+
+	stopchanel := make(chan int, 1)
+	//log.Println("Перед отправкой")
+	go sendMetric(ctx, dataChannel, stopchanel, cfg)
+
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	// Block until a signal is received.
+	<-sigint
+
+	//timer = time.NewTimer(60 * time.Second)
+	//<-timer.C
+
+	cancel()
+	log.Println("Стоп агента")
+	//<-stopchanel
+
+}
+
+func namesMetric() (map[string]string, []string) {
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
 
@@ -141,7 +255,9 @@ func main() {
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
 		case "uint64":
-			namesMetric[strNаme] = "counter"
+			namesMetric[strNаme] = "gauge" //"counter"
+		case "uint32":
+			namesMetric[strNаme] = "gauge" //"counter"
 		case "float64":
 			namesMetric[strNаme] = "gauge"
 		default:
@@ -150,25 +266,11 @@ func main() {
 
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	keys := make([]string, 0, len(namesMetric))
+	for k := range namesMetric {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 
-	dataChannel := make(chan *http.Request, len(namesMetric)*100) //теперь в канале будет не url, а сам запрос. Мне кажется так лучше, когда в запросе будем заполнять Body
-	stopchanel := make(chan int, 1)
-
-	go formMetric(ctx, cfg, namesMetric, dataChannel)
-
-	timer := time.NewTimer(2 * time.Second)
-	<-timer.C
-
-	go sendMetric(ctx, dataChannel, stopchanel, cfg)
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	// Block until a signal is received.
-	<-c
-
-	cancel()
-
-	<-stopchanel
-
+	return namesMetric, keys
 }
