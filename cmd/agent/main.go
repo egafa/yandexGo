@@ -179,7 +179,7 @@ func initconfig() cfg {
 
 	if cfg.addrServer == "" {
 
-		cfg.addrServer = "http://127.0.0.1:8080"
+		cfg.addrServer = "127.0.0.1:8080"
 	}
 
 	if cfg.pollInterval == 0 {
