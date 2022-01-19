@@ -20,7 +20,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v6"
 
 	"github.com/egafa/yandexGo/api/model"
 )
@@ -31,7 +31,7 @@ type dataRequest struct {
 	body   []byte
 }
 
-func newRequest(m interface{}, addr, method string, loger bool) (dataRequest, error) {
+func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 	_, err := url.Parse(addr)
 	if err != nil {
 		log.Println("Ошибка парсера", err.Error())
@@ -54,18 +54,9 @@ func newRequest(m interface{}, addr, method string, loger bool) (dataRequest, er
 
 func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
-	/*
-		f, err := os.OpenFile(cfg.dirlog+"text.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Println(err)
-		}
-		defer f.Close()
-		infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
-	*/
-
 	addrServer := cfg.addrServer
 
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 60; i++ {
 
 		select {
 		case <-ctx.Done():
@@ -86,7 +77,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 				addr := addrServer + "/update/counter/PollCount/" + "1"
 				//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-				req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+				req, err := newRequest(m, addr, http.MethodPost)
 				if err == nil {
 					sliceMetric[0] = req
 					//dataChannel <- req
@@ -100,7 +91,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				m.Value = &mValue
 
 				addr = addrServer + "/update/gauge/RandomValue/" + fmt.Sprintf("%v", mValue)
-				req, err = newRequest(m, addr, http.MethodPost, cfg.log)
+				req, err = newRequest(m, addr, http.MethodPost)
 				if err == nil {
 					sliceMetric[1] = req
 					//dataChannel <- req
@@ -128,7 +119,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 					addr := addrServer + "/update/" + typeNаme + "/" + keysMetric[i] + "/" + fmt.Sprintf("%v", val)
 					//req, err := newRequest(m, addr, http.MethodPost, cfg.log, infoLog)
-					req, err := newRequest(m, addr, http.MethodPost, cfg.log)
+					req, err := newRequest(m, addr, http.MethodPost)
 					if err == nil {
 						sliceMetric[i+2] = req
 						//dataChannel <- req
@@ -145,17 +136,6 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 
 func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg cfg) {
 	var textReq []dataRequest
-	//var m model.Metrics
-
-	/*
-		f, err := os.OpenFile(cfg.dirname+"\\textreq.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Println(err)
-		}
-		defer f.Close()
-
-		infoLog := log.New(f, "INFO\t", log.Ldate|log.Ltime)
-	*/
 
 	client := &http.Client{}
 	client.Timeout = time.Second * time.Duration(cfg.timeout)
@@ -230,21 +210,20 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 }
 
 type cfg struct {
-	addrServer     string
-	log            bool
-	pollInterval   int
-	reportInterval int
+	addrServer     string `env:"ADDRESS"`
+	pollInterval   int    //`env:"POLL_INTERVAL"`
+	reportInterval int    //`env:"REPORT_INTERVAL"`
 	timeout        int
 	dirname        string
-	dirlog         string
 }
 
 func initconfig() cfg {
-	cfg := cfg{}
+	var cfg cfg
 	env.Parse(&cfg)
 
 	if cfg.addrServer == "" {
-		cfg.addrServer = "http://127.0.0.1:8080"
+
+		cfg.addrServer = os.Getenv("ADDRESS") //"http://127.0.0.1:8080"
 	}
 
 	if cfg.pollInterval == 0 {
@@ -264,12 +243,6 @@ func initconfig() cfg {
 		exPath := filepath.Dir(ex)
 		cfg.dirname = exPath
 	}
-
-	if cfg.dirlog == "" {
-		cfg.dirlog = "D:\\gafa\\Go\\yandexGo\\"
-	}
-
-	cfg.log = false
 
 	return cfg
 }
