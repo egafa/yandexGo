@@ -16,15 +16,10 @@ type Metric interface {
 }
 
 type MapMetric struct {
-	GaugeData   map[string]float64
-	CounterData map[string]int64
-	flagSave    bool
-	fileName    string
-}
-
-type MapMetricToSave struct {
-	GaugeData   map[string]float64
-	CounterData map[string]int64
+	GaugeData   map[string]float64 `json:"GaugeData"`
+	CounterData map[string]int64   `json:"CounterData"`
+	flagSave    bool               `json:"-"`
+	fileName    string             `json:"-"`
 }
 
 type GaugeTemplateMetric struct {
@@ -56,7 +51,7 @@ func (m MapMetric) SetFileName(fileName string) {
 }
 
 func (m MapMetric) SaveToFile() error {
-	var MapMetricToSave MapMetricToSave
+	var MapMetricToSave MapMetric
 
 	if !m.flagSave {
 		return nil
@@ -69,17 +64,41 @@ func (m MapMetric) SaveToFile() error {
 	}
 	defer file.Close()
 
-	MapMetricToSave.CounterData = make(map[string]int64)
-	for 
-	copy(MapMetricToSave, m.CounterData)
-
-	copy(target, source)
-
 	encoder := json.NewEncoder(file)
 	err = encoder.Encode(MapMetricToSave)
 	if err != nil {
 		log.Println("Ошибка сериализации: ", err.Error())
 		return err
+	}
+
+	return nil
+}
+
+func (m MapMetric) LoadFromFile() error {
+	var MapMetricToSave MapMetric
+
+	file, err := os.OpenFile(m.fileName, os.O_RDONLY, 0777)
+	if err != nil {
+		log.Printf("Ошибка открытия файла: ", m.fileName, err.Error())
+		return err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&MapMetricToSave)
+	if err != nil {
+		log.Printf("Ошибка десериализации: ", err.Error())
+		return err
+
+	}
+
+	m = NewMapMetric()
+	for k := range MapMetricToSave.CounterData {
+		m.CounterData[k] = MapMetricToSave.CounterData[k]
+	}
+
+	for k := range MapMetricToSave.GaugeData {
+		m.GaugeData[k] = MapMetricToSave.GaugeData[k]
 	}
 
 	return nil
