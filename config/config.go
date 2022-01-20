@@ -28,7 +28,7 @@ func LoadConfigAgent() *Config_Agent {
 	//v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
 
-	v.SetDefault(AddrServer, "127.0.0.1:80")
+	v.SetDefault(AddrServer, "127.0.0.1:8080")
 	v.SetDefault(PollInterval, 2)
 	v.SetDefault(ReportInterval, 10)
 	v.SetDefault(Timeout, 1)
