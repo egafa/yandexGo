@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"reflect"
 	"runtime"
 	"sort"
@@ -20,9 +19,8 @@ import (
 
 	"encoding/json"
 
-	"github.com/caarlos0/env/v6"
-
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/config"
 )
 
 type dataRequest struct {
@@ -51,7 +49,7 @@ func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 	return r, nil
 }
 
-func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
@@ -74,7 +72,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				delta, _ := strconv.ParseInt("1", 10, 64)
 				m.Delta = &delta
 
-				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, delta), http.MethodPost)
+				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost)
 				if err == nil {
 					sliceMetric[0] = req
 				}
@@ -86,7 +84,7 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 				mValue := rand.Float64()
 				m.Value = &mValue
 
-				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, mValue), http.MethodPost)
+				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost)
 				if err == nil {
 					sliceMetric[1] = req
 				}
@@ -105,11 +103,11 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 					if typeNаme == "gauge" {
 						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
 						m.Value = &f
-						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, f)
+						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, f)
 					} else {
 						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
 						m.Delta = &i
-						addr = fmt.Sprintf(urlUpdate, cfg.addrServer, m.MType, m.ID, i)
+						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, i)
 					}
 
 					req, err := newRequest(m, addr, http.MethodPost)
@@ -126,11 +124,11 @@ func formMetric(ctx context.Context, cfg cfg, namesMetric map[string]string, key
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg cfg) {
+func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg config.Config_Agent) {
 	var textReq []dataRequest
 
 	client := &http.Client{}
-	client.Timeout = time.Second * time.Duration(cfg.timeout)
+	client.Timeout = time.Second * time.Duration(cfg.Timeout)
 
 	for { //i := 0; i < 40; i++ {
 
@@ -154,7 +152,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 					}
 				}
 
-				time.Sleep(time.Duration(cfg.reportInterval) * time.Second)
+				time.Sleep(time.Duration(cfg.ReportInterval) * time.Second)
 			}
 		default:
 			//stopchanel <- 0
@@ -165,48 +163,11 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 }
 
-type cfg struct {
-	addrServer     string `env:"ADDRESS"`
-	pollInterval   int    //`env:"POLL_INTERVAL"`
-	reportInterval int    //`env:"REPORT_INTERVAL"`
-	timeout        int
-	dirname        string
-}
-
-func initconfig() cfg {
-	var cfg cfg
-	env.Parse(&cfg)
-
-	if cfg.addrServer == "" {
-
-		cfg.addrServer = "127.0.0.1:8080"
-	}
-
-	if cfg.pollInterval == 0 {
-		cfg.pollInterval = 2
-	}
-	if cfg.reportInterval == 0 {
-		cfg.reportInterval = 10
-	}
-	if cfg.timeout == 0 {
-		cfg.timeout = 3
-	}
-
-	ex, err := os.Executable()
-	if err != nil {
-		cfg.dirname = ""
-	} else {
-		exPath := filepath.Dir(ex)
-		cfg.dirname = exPath
-	}
-
-	return cfg
-}
-
 func main() {
 	log.Println("Запуск агента")
 
-	cfg := initconfig()
+	//cfg := initconfig()
+	cfg := config.LoadConfigAgent()
 
 	namesMetric, keysMetric := namesMetric()
 	log.Println("Массив метрик ", keysMetric)
@@ -215,14 +176,13 @@ func main() {
 
 	dataChannel := make(chan []dataRequest, len(namesMetric)*100)
 
-	go formMetric(ctx, cfg, namesMetric, keysMetric, dataChannel)
+	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
 	timer := time.NewTimer(1 * time.Second)
 	<-timer.C
 
 	stopchanel := make(chan int, 1)
-	//log.Println("Перед отправкой")
-	go sendMetric(ctx, dataChannel, stopchanel, cfg)
+	go sendMetric(ctx, dataChannel, stopchanel, *cfg)
 
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
