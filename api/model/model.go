@@ -1,5 +1,11 @@
 package model
 
+import (
+	"encoding/json"
+	"log"
+	"os"
+)
+
 type Metric interface {
 	SaveGaugeVal(nameMetric string, value float64)
 	GetGaugeVal(nameMetric string) (float64, bool)
@@ -10,6 +16,13 @@ type Metric interface {
 }
 
 type MapMetric struct {
+	GaugeData   map[string]float64
+	CounterData map[string]int64
+	flagSave    bool
+	fileName    string
+}
+
+type MapMetricToSave struct {
 	GaugeData   map[string]float64
 	CounterData map[string]int64
 }
@@ -37,23 +50,40 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
-/*
-func InitMapMetricValData(GaugeData map[string]float64, CounterData map[string]int64) {
-	mapMetricVal := MapMetric{}
-	mapMetricVal.GaugeData = make(map[string]float64)
-	mapMetricVal.CounterData = make(map[string]int64)
-
-	for key, value := range GaugeData {
-		mapMetricVal.GaugeData[key] = value
-	}
-
-	for key1, value1 := range CounterData {
-		mapMetricVal.CounterData[key1] = value1
-	}
-
-	MetricVal = mapMetricVal
+func (m MapMetric) SetFileName(fileName string) {
+	m.flagSave = true
+	m.fileName = fileName
 }
-*/
+
+func (m MapMetric) SaveToFile() error {
+	var MapMetricToSave MapMetricToSave
+
+	if !m.flagSave {
+		return nil
+	}
+
+	file, err := os.Create(m.fileName)
+	if err != nil {
+		log.Println("Ошибка создания файла: ", m.fileName, err.Error())
+		return err
+	}
+	defer file.Close()
+
+	MapMetricToSave.CounterData = make(map[string]int64)
+	for 
+	copy(MapMetricToSave, m.CounterData)
+
+	copy(target, source)
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(MapMetricToSave)
+	if err != nil {
+		log.Println("Ошибка сериализации: ", err.Error())
+		return err
+	}
+
+	return nil
+}
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
