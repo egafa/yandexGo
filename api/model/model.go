@@ -45,9 +45,12 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
-func (m MapMetric) SetFileName(fileName string) {
-	m.flagSave = true
-	m.fileName = fileName
+func (m MapMetric) SetFileName(fname string) {
+	m.fileName = fname
+}
+
+func (m MapMetric) SetFlagSave(fl bool) {
+	m.flagSave = fl
 }
 
 func (m MapMetric) SaveToFile() error {
@@ -76,6 +79,10 @@ func (m MapMetric) SaveToFile() error {
 
 func (m MapMetric) LoadFromFile() error {
 	var MapMetricToSave MapMetric
+
+	if m.fileName == "" {
+		return nil
+	}
 
 	file, err := os.OpenFile(m.fileName, os.O_RDONLY, 0777)
 	if err != nil {
