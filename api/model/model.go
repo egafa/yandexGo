@@ -95,17 +95,6 @@ func (m MapMetric) LoadFromFile() error {
 
 	}
 
-	/*
-		m = NewMapMetric()
-		for k := range MapMetricToSave.CounterData {
-			m.CounterData[k] = MapMetricToSave.CounterData[k]
-		}
-
-		for k := range MapMetricToSave.GaugeData {
-			m.GaugeData[k] = MapMetricToSave.GaugeData[k]
-		}
-	*/
-
 	return nil
 }
 

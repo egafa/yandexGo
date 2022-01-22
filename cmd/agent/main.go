@@ -113,7 +113,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 					req, err := newRequest(m, addr, http.MethodPost)
 					if err == nil {
 						sliceMetric[i+2] = req
-						log.Println("Добавление запроса ", req.addr)
+						//log.Println("Добавление запроса ", req.addr)
 					}
 
 				}
@@ -167,7 +167,6 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 func main() {
 	log.Println("Запуск агента")
 
-	//cfg := initconfig()
 	cfg := config.LoadConfigAgent()
 	log.Println("Сервер ", cfg.AddrServer)
 
