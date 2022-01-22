@@ -19,13 +19,15 @@ import (
 func main() {
 
 	cfg := config.LoadConfigServer()
-	log.Println("Сервер ", cfg.AddrServer)
+	log.Println("Запуск Сервера ", cfg.AddrServer)
+	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore)
 
 	mapMetric := model.NewMapMetric() //избавился от глобальной переменной
 
 	if cfg.DirName != "" && cfg.StoreFile != "" {
-		//mapMetric.SetFileName(cfg.DirName + cfg.StoreFile)
-		mapMetric.SetFileName(cfg.StoreFile)
+		mapMetric.FileName = cfg.DirName + cfg.StoreFile
+		//mapMetric.FileName = cfg.StoreFile
+		log.Println("Путь к файлу метрик ", mapMetric.FileName)
 	}
 
 	if cfg.StoreInterval == 0 {
@@ -77,14 +79,14 @@ func main() {
 		close(idleConnsClosed)
 	}()
 
+	go SaveToFileTimer(mapMetric, cfg)
+
 	log.Print("Запуск сервера HTTP")
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		// Error starting or closing listener:
 		log.Fatalf("HTTP server ListenAndServe: %v", err)
 	}
-
-	go SaveToFileTimer(mapMetric, cfg)
 
 	<-idleConnsClosed
 

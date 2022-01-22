@@ -65,6 +65,7 @@ func LoadConfigServer() *Config_Server {
 
 	v.SetDefault(AddrServer, "127.0.0.1:8080")
 	v.SetDefault(StoreInterval, 300)
+	//v.SetDefault(StoreFile, "D:\\gafa\\Go\\yandexGo\\tmp\\devops-metrics-db.json")
 	v.SetDefault(StoreFile, "/tmp/devops-metrics-db.json")
 	v.SetDefault(Restore, true)
 	v.SetDefault(DirName, getDir())

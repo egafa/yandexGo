@@ -18,8 +18,8 @@ type Metric interface {
 type MapMetric struct {
 	GaugeData   map[string]float64 `json:"GaugeData"`
 	CounterData map[string]int64   `json:"CounterData"`
-	flagSave    bool               `json:"-"`
-	fileName    string             `json:"-"`
+	FlagSave    bool               `json:"-"`
+	FileName    string             `json:"-"`
 }
 
 type GaugeTemplateMetric struct {
@@ -46,29 +46,25 @@ func NewMapMetric() MapMetric {
 }
 
 func (m MapMetric) SetFileName(fname string) {
-	m.fileName = fname
+	m.FileName = fname
 }
 
-func (m MapMetric) SetFlagSave(fl bool) {
-	m.flagSave = fl
+func (m *MapMetric) SetFlagSave(fl bool) {
+	m.FlagSave = fl
 }
 
 func (m MapMetric) SaveToFile() error {
-	var MapMetricToSave MapMetric
+	//var MapMetricToSave MapMetric
 
-	if !m.flagSave {
-		return nil
-	}
-
-	file, err := os.Create(m.fileName)
+	file, err := os.Create(m.FileName)
 	if err != nil {
-		log.Println("Ошибка создания файла: ", m.fileName, err.Error())
+		log.Println("Ошибка создания файла: ", m.FileName, err.Error())
 		return err
 	}
 	defer file.Close()
 
 	encoder := json.NewEncoder(file)
-	err = encoder.Encode(MapMetricToSave)
+	err = encoder.Encode(m)
 	if err != nil {
 		log.Println("Ошибка сериализации: ", err.Error())
 		return err
@@ -78,41 +74,46 @@ func (m MapMetric) SaveToFile() error {
 }
 
 func (m MapMetric) LoadFromFile() error {
-	var MapMetricToSave MapMetric
+	//var MapMetricToSave MapMetric
 
-	if m.fileName == "" {
+	if m.FileName == "" {
 		return nil
 	}
 
-	file, err := os.OpenFile(m.fileName, os.O_RDONLY, 0777)
+	file, err := os.OpenFile(m.FileName, os.O_RDONLY, 0777)
 	if err != nil {
-		log.Printf("Ошибка открытия файла: ", m.fileName, err.Error())
+		log.Printf("Ошибка открытия файла: ", m.FileName, err.Error())
 		return err
 	}
 	defer file.Close()
 
 	decoder := json.NewDecoder(file)
-	err = decoder.Decode(&MapMetricToSave)
+	err = decoder.Decode(&m)
 	if err != nil {
 		log.Printf("Ошибка десериализации: ", err.Error())
 		return err
 
 	}
 
-	m = NewMapMetric()
-	for k := range MapMetricToSave.CounterData {
-		m.CounterData[k] = MapMetricToSave.CounterData[k]
-	}
+	/*
+		m = NewMapMetric()
+		for k := range MapMetricToSave.CounterData {
+			m.CounterData[k] = MapMetricToSave.CounterData[k]
+		}
 
-	for k := range MapMetricToSave.GaugeData {
-		m.GaugeData[k] = MapMetricToSave.GaugeData[k]
-	}
+		for k := range MapMetricToSave.GaugeData {
+			m.GaugeData[k] = MapMetricToSave.GaugeData[k]
+		}
+	*/
 
 	return nil
 }
 
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
+	if m.FlagSave {
+		m.SaveToFile()
+	}
 }
 
 func (m MapMetric) GetGaugeVal(nameMetric string) (float64, bool) {
@@ -132,6 +133,10 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 		m.CounterData[nameMetric] = v + value
 	} else {
 		m.CounterData[nameMetric] = value
+	}
+
+	if m.FlagSave {
+		m.SaveToFile()
 	}
 }
 
