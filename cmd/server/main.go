@@ -25,8 +25,8 @@ func main() {
 	mapMetric := model.NewMapMetric() //избавился от глобальной переменной
 
 	if cfg.DirName != "" && cfg.StoreFile != "" {
-		mapMetric.FileName = cfg.DirName + cfg.StoreFile
-		//mapMetric.FileName = cfg.StoreFile
+		//mapMetric.FileName = cfg.DirName + cfg.StoreFile
+		mapMetric.FileName = cfg.StoreFile
 		log.Println("Путь к файлу метрик ", mapMetric.FileName)
 	}
 
