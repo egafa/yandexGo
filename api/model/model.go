@@ -82,7 +82,7 @@ func (m MapMetric) LoadFromFile() error {
 
 	file, err := os.OpenFile(m.FileName, os.O_RDONLY, 0777)
 	if err != nil {
-		log.Printf("Ошибка открытия файла: ", m.FileName, err.Error())
+		log.Println("Ошибка открытия файла: ", m.FileName, err.Error())
 		return err
 	}
 	defer file.Close()
@@ -90,7 +90,7 @@ func (m MapMetric) LoadFromFile() error {
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&m)
 	if err != nil {
-		log.Printf("Ошибка десериализации: ", err.Error())
+		log.Println("Ошибка десериализации: ", err.Error())
 		return err
 
 	}
