@@ -2,7 +2,6 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -104,43 +103,22 @@ func LoadConfigServer() *Config_Server {
 	v.SetDefault("Timeout", 1)
 
 	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
-	pflag.Bool("r", false, "Восстановить из файла")
+	pflag.String("r", "false", "Восстановить из файла")
 	pflag.String("i", "5m", "Интервал сохранения в файл")
 	pflag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
 	pflag.Parse()
 	v.BindPFlags(pflag.CommandLine)
 
-	_, ok := os.LookupEnv(Restorenv)
-	Restore := false
-	if ok {
-		Restore = v.GetBool("Restore")
-	} else {
-		Restore = v.GetBool("r")
+	RestoreStr := GetVal(v, Restorenv, "Restore", "r")
+	Restore := true
+	if RestoreStr == "false" {
+		Restore = false
 	}
 
-	AddrServer := ""
-	_, ok = os.LookupEnv(AddrServerEnv)
-	if ok {
-		AddrServer = v.GetString("AddrServer")
-	} else {
-		AddrServer = v.GetString("a")
-	}
+	AddrServer := GetVal(v, AddrServerEnv, "AddrServer", "a")
+	StoreFile := GetVal(v, StoreFileEnv, "StoreFile", "f")
 
-	StoreFile := ""
-	_, ok = os.LookupEnv(StoreFileEnv)
-	if ok {
-		StoreFile = v.GetString("StoreFile")
-	} else {
-		StoreFile = v.GetString("f")
-	}
-
-	StoreIntervalStr := ""
-	_, ok = os.LookupEnv(StoreIntervalEnv)
-	if ok {
-		StoreIntervalStr = v.GetString("StoreInterval")
-	} else {
-		StoreIntervalStr = v.GetString("i")
-	}
+	StoreIntervalStr := GetVal(v, StoreIntervalEnv, "StoreInterval", "i")
 	StoreInterval, _ := time.ParseDuration(StoreIntervalStr)
 
 	return &Config_Server{
@@ -152,12 +130,11 @@ func LoadConfigServer() *Config_Server {
 	}
 }
 
-func getDir() string {
-	ex, err := os.Executable()
-	if err != nil {
-		return ""
+func GetVal(v *viper.Viper, env string, envName string, flagName string) string {
+	_, ok := os.LookupEnv(env)
+	if ok {
+		return v.GetString(envName)
+	} else {
+		return v.GetString(flagName)
 	}
-
-	return filepath.Dir(ex)
-
 }
