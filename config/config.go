@@ -4,26 +4,18 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
 const (
-	envPrefix      = ""
-	AddrServer     = "ADDRESS"
-	PollInterval   = "POLLINTERVAL"
-	ReportInterval = "REPORTINTERVAL"
-	Timeout        = "TIMEOUT"
-	DirName        = "DIRNAME"
-
-	StoreInterval = "STORE_INTERVAL"
-	StoreFile     = "STORE_FILE "
-	Restore       = "RESTORE"
+	envPrefix = ""
 )
 
 type Config_Agent struct {
-	AddrServer     string `env:"ADDRESS"`
-	PollInterval   int    //`env:"POLL_INTERVAL"`
-	ReportInterval int    //`env:"REPORT_INTERVAL"`
+	AddrServer     string
+	PollInterval   int
+	ReportInterval int
 	Timeout        int
 	DirName        string
 }
@@ -33,49 +25,126 @@ type Config_Server struct {
 	StoreInterval int
 	StoreFile     string
 	Restore       bool
-	DirName       string
-	Port          string
+	Timeout       int
 }
 
 // LoadConfig creates a Config object that is filled with values from environment variables or set default values
 func LoadConfigAgent() *Config_Agent {
+
+	AddrServerEnv := "ADDRESS"
+	PollIntervalEnv := "POLLINTERVAL"
+	ReportIntervalEnv := "REPORTINTERVAL"
+
 	v := viper.New()
+	v.BindEnv("AddrServer", AddrServerEnv)
+	v.BindEnv("PollInterval", PollIntervalEnv)
+	v.BindEnv("ReportInterval", ReportIntervalEnv)
 	//v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
 
-	v.SetDefault(AddrServer, "127.0.0.1:8080")
-	v.SetDefault(PollInterval, 2)
-	v.SetDefault(ReportInterval, 10)
-	v.SetDefault(Timeout, 1)
-	v.SetDefault(DirName, getDir())
+	v.SetDefault("Timeout", 1)
+
+	pflag.String("a", "127.0.0.1:5080", "адрес сервера")
+	pflag.Int("p", 2, "интервал получения метрик")
+	pflag.Int("r", 10, "интервал отправки метрик")
+	pflag.Parse()
+	v.BindPFlags(pflag.CommandLine)
+
+	AddrServer := ""
+	_, ok := os.LookupEnv(AddrServerEnv)
+	if ok {
+		AddrServer = v.GetString("AddrServer")
+	} else {
+		AddrServer = v.GetString("a")
+	}
+
+	ReportInterval := 0
+	_, ok = os.LookupEnv(ReportIntervalEnv)
+	if ok {
+		ReportInterval = v.GetInt("ReportInterval")
+	} else {
+		ReportInterval = v.GetInt("r")
+	}
+
+	PollInterval := 0
+	_, ok = os.LookupEnv(PollIntervalEnv)
+	if ok {
+		PollInterval = v.GetInt("PollInterval")
+	} else {
+		PollInterval = v.GetInt("p")
+	}
 
 	return &Config_Agent{
-		AddrServer:     v.GetString(AddrServer),
-		PollInterval:   v.GetInt(PollInterval),
-		ReportInterval: v.GetInt(ReportInterval),
-		Timeout:        v.GetInt(Timeout),
-		DirName:        v.GetString(DirName),
+		AddrServer:     AddrServer,
+		PollInterval:   PollInterval,
+		ReportInterval: ReportInterval,
+		Timeout:        v.GetInt("Timeout"),
 	}
 }
 
 func LoadConfigServer() *Config_Server {
+
+	AddrServerEnv := "ADDRESS"
+	StoreIntervalEnv := "STORE_INTERVAL"
+	StoreFileEnv := "STORE_FILE"
+	Restorenv := "RESTORE"
+
 	v := viper.New()
+	v.BindEnv("AddrServer", AddrServerEnv)
+	v.BindEnv("StoreInterval", StoreIntervalEnv)
+	v.BindEnv("StoreFile", StoreFileEnv)
+	v.BindEnv("Restore", Restorenv)
+
 	//v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
 
-	v.SetDefault(AddrServer, "127.0.0.1:8080")
-	v.SetDefault(StoreInterval, 300)
-	//v.SetDefault(StoreFile, "D:\\gafa\\Go\\yandexGo\\tmp\\devops-metrics-db.json")
-	v.SetDefault(StoreFile, "/tmp/devops-metrics-db.json")
-	v.SetDefault(Restore, false)
-	v.SetDefault(DirName, getDir())
+	v.SetDefault("Timeout", 1)
+
+	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
+	pflag.Bool("r", false, "Восстановить из файла")
+	pflag.Int("i", 300, "Интервал сохранения в файл")
+	pflag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
+	pflag.Parse()
+	v.BindPFlags(pflag.CommandLine)
+
+	_, ok := os.LookupEnv(Restorenv)
+	Restore := false
+	if ok {
+		Restore = v.GetBool("Restore")
+	} else {
+		Restore = v.GetBool("r")
+	}
+
+	AddrServer := ""
+	_, ok = os.LookupEnv(AddrServerEnv)
+	if ok {
+		AddrServer = v.GetString("AddrServer")
+	} else {
+		AddrServer = v.GetString("a")
+	}
+
+	StoreFile := ""
+	_, ok = os.LookupEnv(StoreFileEnv)
+	if ok {
+		StoreFile = v.GetString("StoreFile")
+	} else {
+		StoreFile = v.GetString("f")
+	}
+
+	StoreInterval := 0
+	_, ok = os.LookupEnv(StoreIntervalEnv)
+	if ok {
+		StoreInterval = v.GetInt("StoreInterval")
+	} else {
+		StoreInterval = v.GetInt("i")
+	}
 
 	return &Config_Server{
-		AddrServer:    v.GetString(AddrServer),
-		StoreInterval: v.GetInt(StoreInterval),
-		StoreFile:     v.GetString(StoreFile),
-		Restore:       v.GetBool(Restore),
-		DirName:       v.GetString(DirName),
+		AddrServer:    AddrServer,
+		StoreInterval: StoreInterval,
+		StoreFile:     StoreFile,
+		Restore:       Restore,
+		Timeout:       v.GetInt("Timeout"),
 	}
 }
 

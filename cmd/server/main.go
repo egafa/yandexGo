@@ -22,10 +22,9 @@ func main() {
 	log.Println("Запуск Сервера ", cfg.AddrServer)
 	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore)
 
-	mapMetric := model.NewMapMetric() //избавился от глобальной переменной
+	mapMetric := model.NewMapMetric()
 
-	if cfg.DirName != "" && cfg.StoreFile != "" {
-		//mapMetric.FileName = cfg.DirName + cfg.StoreFile
+	if cfg.StoreFile != "" {
 		mapMetric.FileName = cfg.StoreFile
 		log.Println("Путь к файлу метрик ", mapMetric.FileName)
 	}
@@ -62,7 +61,6 @@ func main() {
 		Handler: r,
 		Addr:    cfg.AddrServer,
 	}
-	//srv.Addr = addr
 
 	idleConnsClosed := make(chan struct{})
 	go func() {

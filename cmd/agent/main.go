@@ -165,10 +165,9 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 }
 
 func main() {
-	log.Println("Запуск агента")
-
 	cfg := config.LoadConfigAgent()
-	log.Println("Сервер ", cfg.AddrServer)
+	log.Println("Запуск агента.")
+	log.Println("Сервер ", cfg.AddrServer, "PollInterval", cfg.PollInterval, "ReportInterval", cfg.ReportInterval)
 
 	namesMetric, keysMetric := namesMetric()
 	log.Println("Массив метрик ", keysMetric)
