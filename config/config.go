@@ -1,15 +1,9 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"time"
-
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
-)
-
-const (
-	envPrefix = ""
 )
 
 type Config_Agent struct {
@@ -35,52 +29,23 @@ func LoadConfigAgent() *Config_Agent {
 	PollIntervalEnv := "POLLINTERVAL"
 	ReportIntervalEnv := "REPORTINTERVAL"
 
-	v := viper.New()
-	v.BindEnv("AddrServer", AddrServerEnv)
-	v.BindEnv("PollInterval", PollIntervalEnv)
-	v.BindEnv("ReportInterval", ReportIntervalEnv)
-	//v.SetEnvPrefix(envPrefix)
-	v.AutomaticEnv()
+	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
+	PollIntervalStr := flag.String("p", "2s", "интервал получения метрик")
+	ReportIntervalStr := flag.String("r", "10s", "интервал отправки метрик")
+	flag.Parse()
 
-	v.SetDefault("Timeout", 1)
+	SetVal(AddrServerEnv, AddrServer)
+	SetVal(PollIntervalEnv, PollIntervalStr)
+	SetVal(ReportIntervalEnv, ReportIntervalStr)
 
-	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
-	pflag.String("p", "2s", "интервал получения метрик")
-	pflag.String("r", "10s", "интервал отправки метрик")
-	pflag.Parse()
-	v.BindPFlags(pflag.CommandLine)
-
-	AddrServer := ""
-	_, ok := os.LookupEnv(AddrServerEnv)
-	if ok {
-		AddrServer = v.GetString("AddrServer")
-	} else {
-		AddrServer = v.GetString("a")
-	}
-
-	ReportIntervalStr := ""
-	_, ok = os.LookupEnv(ReportIntervalEnv)
-	if ok {
-		ReportIntervalStr = v.GetString("ReportInterval")
-	} else {
-		ReportIntervalStr = v.GetString("r")
-	}
-	ReportInterval, _ := time.ParseDuration(ReportIntervalStr)
-
-	PollIntervalStr := ""
-	_, ok = os.LookupEnv(PollIntervalEnv)
-	if ok {
-		PollIntervalStr = v.GetString("PollInterval")
-	} else {
-		PollIntervalStr = v.GetString("p")
-	}
-	PollInterval, _ := time.ParseDuration(PollIntervalStr)
+	PollInterval, _ := time.ParseDuration(*PollIntervalStr)
+	ReportInterval, _ := time.ParseDuration(*ReportIntervalStr)
 
 	return &Config_Agent{
-		AddrServer:     AddrServer,
+		AddrServer:     *AddrServer,
 		PollInterval:   int(PollInterval.Seconds()),
 		ReportInterval: int(ReportInterval.Seconds()),
-		Timeout:        v.GetInt("Timeout"),
+		Timeout:        1,
 	}
 }
 
@@ -91,50 +56,37 @@ func LoadConfigServer() *Config_Server {
 	StoreFileEnv := "STORE_FILE"
 	Restorenv := "RESTORE"
 
-	v := viper.New()
-	v.BindEnv("AddrServer", AddrServerEnv)
-	v.BindEnv("StoreInterval", StoreIntervalEnv)
-	v.BindEnv("StoreFile", StoreFileEnv)
-	v.BindEnv("Restore", Restorenv)
+	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
+	StoreFile := flag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
+	RestoreStr := flag.String("r", "false", "Восстановить из файла")
+	StoreIntervalStr := flag.String("i", "5m", "Интервал сохранения в файл")
 
-	//v.SetEnvPrefix(envPrefix)
-	v.AutomaticEnv()
+	flag.Parse()
 
-	v.SetDefault("Timeout", 1)
+	SetVal(AddrServerEnv, AddrServer)
+	SetVal(StoreFileEnv, StoreFile)
+	SetVal(Restorenv, RestoreStr)
+	SetVal(StoreIntervalEnv, StoreIntervalStr)
 
-	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
-	pflag.String("r", "false", "Восстановить из файла")
-	pflag.String("i", "5m", "Интервал сохранения в файл")
-	pflag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
-	pflag.Parse()
-	v.BindPFlags(pflag.CommandLine)
-
-	RestoreStr := GetVal(v, Restorenv, "Restore", "r")
 	Restore := true
-	if RestoreStr == "false" {
+	if *RestoreStr == "false" {
 		Restore = false
 	}
 
-	AddrServer := GetVal(v, AddrServerEnv, "AddrServer", "a")
-	StoreFile := GetVal(v, StoreFileEnv, "StoreFile", "f")
-
-	StoreIntervalStr := GetVal(v, StoreIntervalEnv, "StoreInterval", "i")
-	StoreInterval, _ := time.ParseDuration(StoreIntervalStr)
+	StoreInterval, _ := time.ParseDuration(*StoreIntervalStr)
 
 	return &Config_Server{
-		AddrServer:    AddrServer,
+		AddrServer:    *AddrServer,
 		StoreInterval: StoreInterval.Seconds(),
-		StoreFile:     StoreFile,
+		StoreFile:     *StoreFile,
 		Restore:       Restore,
-		Timeout:       v.GetInt("Timeout"),
+		Timeout:       1,
 	}
 }
 
-func GetVal(v *viper.Viper, env string, envName string, flagName string) string {
-	_, ok := os.LookupEnv(env)
+func SetVal(env string, val *string) {
+	valEnv, ok := os.LookupEnv(env)
 	if ok {
-		return v.GetString(envName)
-	} else {
-		return v.GetString(flagName)
+		*val = valEnv
 	}
 }
