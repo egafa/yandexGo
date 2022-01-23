@@ -68,9 +68,9 @@ func LoadConfigServer() *Config_Server {
 	SetVal(Restorenv, RestoreStr)
 	SetVal(StoreIntervalEnv, StoreIntervalStr)
 
-	Restore := true
-	if *RestoreStr == "false" {
-		Restore = false
+	Restore := false
+	if *RestoreStr == "true" {
+		Restore = true
 	}
 
 	StoreInterval, _ := time.ParseDuration(*StoreIntervalStr)
