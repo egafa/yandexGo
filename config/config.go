@@ -44,7 +44,7 @@ func LoadConfigAgent() *Config_Agent {
 
 	v.SetDefault("Timeout", 1)
 
-	pflag.String("a", "127.0.0.1:5080", "адрес сервера")
+	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
 	pflag.Int("p", 2, "интервал получения метрик")
 	pflag.Int("r", 10, "интервал отправки метрик")
 	pflag.Parse()
