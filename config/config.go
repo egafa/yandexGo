@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -22,7 +23,7 @@ type Config_Agent struct {
 
 type Config_Server struct {
 	AddrServer    string
-	StoreInterval int
+	StoreInterval float64
 	StoreFile     string
 	Restore       bool
 	Timeout       int
@@ -45,8 +46,8 @@ func LoadConfigAgent() *Config_Agent {
 	v.SetDefault("Timeout", 1)
 
 	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
-	pflag.Int("p", 2, "интервал получения метрик")
-	pflag.Int("r", 10, "интервал отправки метрик")
+	pflag.String("p", "2s", "интервал получения метрик")
+	pflag.String("r", "10s", "интервал отправки метрик")
 	pflag.Parse()
 	v.BindPFlags(pflag.CommandLine)
 
@@ -58,26 +59,28 @@ func LoadConfigAgent() *Config_Agent {
 		AddrServer = v.GetString("a")
 	}
 
-	ReportInterval := 0
+	ReportIntervalStr := ""
 	_, ok = os.LookupEnv(ReportIntervalEnv)
 	if ok {
-		ReportInterval = v.GetInt("ReportInterval")
+		ReportIntervalStr = v.GetString("ReportInterval")
 	} else {
-		ReportInterval = v.GetInt("r")
+		ReportIntervalStr = v.GetString("r")
 	}
+	ReportInterval, _ := time.ParseDuration(ReportIntervalStr)
 
-	PollInterval := 0
+	PollIntervalStr := ""
 	_, ok = os.LookupEnv(PollIntervalEnv)
 	if ok {
-		PollInterval = v.GetInt("PollInterval")
+		PollIntervalStr = v.GetString("PollInterval")
 	} else {
-		PollInterval = v.GetInt("p")
+		PollIntervalStr = v.GetString("p")
 	}
+	PollInterval, _ := time.ParseDuration(PollIntervalStr)
 
 	return &Config_Agent{
 		AddrServer:     AddrServer,
-		PollInterval:   PollInterval,
-		ReportInterval: ReportInterval,
+		PollInterval:   int(PollInterval.Seconds()),
+		ReportInterval: int(ReportInterval.Seconds()),
 		Timeout:        v.GetInt("Timeout"),
 	}
 }
@@ -102,7 +105,7 @@ func LoadConfigServer() *Config_Server {
 
 	pflag.String("a", "127.0.0.1:8080", "адрес сервера")
 	pflag.Bool("r", false, "Восстановить из файла")
-	pflag.Int("i", 300, "Интервал сохранения в файл")
+	pflag.String("i", "5m", "Интервал сохранения в файл")
 	pflag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
 	pflag.Parse()
 	v.BindPFlags(pflag.CommandLine)
@@ -131,17 +134,18 @@ func LoadConfigServer() *Config_Server {
 		StoreFile = v.GetString("f")
 	}
 
-	StoreInterval := 0
+	StoreIntervalStr := ""
 	_, ok = os.LookupEnv(StoreIntervalEnv)
 	if ok {
-		StoreInterval = v.GetInt("StoreInterval")
+		StoreIntervalStr = v.GetString("StoreInterval")
 	} else {
-		StoreInterval = v.GetInt("i")
+		StoreIntervalStr = v.GetString("i")
 	}
+	StoreInterval, _ := time.ParseDuration(StoreIntervalStr)
 
 	return &Config_Server{
 		AddrServer:    AddrServer,
-		StoreInterval: StoreInterval,
+		StoreInterval: StoreInterval.Seconds(),
 		StoreFile:     StoreFile,
 		Restore:       Restore,
 		Timeout:       v.GetInt("Timeout"),
