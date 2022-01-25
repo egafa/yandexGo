@@ -127,8 +127,8 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 
 			default:
-				w.WriteHeader(http.StatusNotFound)
-				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+				w.WriteHeader(http.StatusBadRequest)
+				http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 				log.Print(logtext + " Не найдена метрика ")
 				return
 			}
@@ -144,8 +144,8 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 			}
 
-			w.WriteHeader(http.StatusNotFound)
-			http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 			log.Print(logtext + " Не определен тип метрики")
 			return
 		}
@@ -173,8 +173,8 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		http.Error(w, "Не определен тип метрики", http.StatusNotFound)
+		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 		log.Print(logtext + " Не определен тип метрики " + typeMetric + "  " + nameMetric)
 
 	}
