@@ -35,6 +35,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var dataMetrics model.Metrics
 		var errConv error
+
 		if r.Header.Get("Content-Type") == "application/json" {
 
 			dataMetrics, errConv = bodyData(r)
