@@ -22,20 +22,7 @@ func main() {
 	log.Println("Запуск Сервера ", cfg.AddrServer)
 	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore)
 
-	mapMetric := model.NewMapMetric()
-
-	if cfg.StoreFile != "" {
-		mapMetric.FileName = cfg.StoreFile
-		log.Println("Путь к файлу метрик ", mapMetric.FileName)
-	}
-
-	if cfg.StoreInterval == 0 {
-		mapMetric.SetFlagSave(true)
-	}
-
-	if cfg.Restore {
-		mapMetric.LoadFromFile()
-	}
+	mapMetric := model.NewMapMetricCongig(cfg)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -48,8 +35,8 @@ func main() {
 	})
 
 	r.Route("/update", func(r chi.Router) {
+		//r.Use(handler.DeCompress)
 		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
-		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric))
 	})
 
 	r.Route("/value", func(r chi.Router) {

@@ -53,7 +53,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
-	for i := 0; i < 60; i++ {
+	for { //i := 0; i < 60; i++ { Здесь бесконечный цикл, это я тесты проводил
 
 		select {
 		case <-ctx.Done():
@@ -69,7 +69,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				m := model.Metrics{}
 				m.ID = "PollCount"
 				m.MType = "counter"
-				delta, _ := strconv.ParseInt("1", 10, 64)
+				delta := int64(1)
 				m.Delta = &delta
 
 				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost)
@@ -178,8 +178,7 @@ func main() {
 
 	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
-	timer := time.NewTimer(1 * time.Second)
-	<-timer.C
+	//time.Sleep(1 * time.Second)
 
 	stopchanel := make(chan int, 1)
 	go sendMetric(ctx, dataChannel, stopchanel, *cfg)

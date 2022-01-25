@@ -14,100 +14,84 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+func bodyData(r *http.Request) (model.Metrics, error) {
+	body, bodyErr := ioutil.ReadAll(r.Body)
+
+	if bodyErr != nil {
+		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
+		return model.Metrics{}, bodyErr
+	}
+
+	dataMetrics := model.Metrics{}
+	jsonErr := json.Unmarshal(body, &dataMetrics)
+	if jsonErr != nil {
+		return model.Metrics{}, jsonErr
+	}
+
+	return dataMetrics, nil
+}
+
 func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var logtext string
-
+		var dataMetrics model.Metrics
+		var errConv error
 		if r.Header.Get("Content-Type") == "application/json" {
-			logtext = "***************************** handler update Json " + r.URL.String()
-			log.Println(logtext)
 
-			body, bodyErr := ioutil.ReadAll(r.Body)
-			defer r.Body.Close()
-			if bodyErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Ошибка открытия тела запроса", http.StatusBadRequest)
-				log.Print(logtext + " Ошибка открытия тела запроса " + bodyErr.Error())
-				return
-			}
-
-			dataMetrics := model.Metrics{}
-			jsonErr := json.Unmarshal(body, &dataMetrics)
-			if jsonErr != nil {
+			dataMetrics, errConv = bodyData(r)
+			if errConv != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusBadRequest)
-				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
 			}
+		} else {
+
+			dataMetrics.ID = chi.URLParam(r, "typeMetric")
+			dataMetrics.MType = chi.URLParam(r, "nammeMetric")
+			valueMetric := chi.URLParam(r, "valueMetric")
 
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
-				m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
-				log.Print(logtext + " Обработана метрика " + string(body))
+				f, err := strconv.ParseFloat(valueMetric, 64)
+				if err == nil {
+					dataMetrics.Value = &f
+				}
+				errConv = err
 
 			case "counter":
-				m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
-				log.Print(logtext + " Обработана метрика " + string(body))
-
+				i, err := strconv.ParseInt(valueMetric, 10, 64)
+				if err == nil {
+					dataMetrics.Delta = &i
+				}
+				errConv = err
 			default:
 				w.WriteHeader(http.StatusBadRequest)
 				http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
-
-				log.Print(logtext + " Не определен тип метрики " + string(body))
+				return
 			}
 
-			return
-
-		}
-
-		logtext = " ****************************** handler update plain " + r.URL.String()
-		log.Println(logtext)
-
-		typeMetric := chi.URLParam(r, "typeMetric")
-		nameMetric := chi.URLParam(r, "nammeMetric")
-		valueMetric := chi.URLParam(r, "valueMetric")
-
-		var errConv error
-
-		switch strings.ToLower(typeMetric) {
-		case "gauge":
-			f, err := strconv.ParseFloat(valueMetric, 64)
-			if err == nil {
-				m.SaveGaugeVal(strings.ToLower(nameMetric), f)
-			}
-			errConv = err
-
-		case "counter":
-			i, err := strconv.ParseInt(valueMetric, 10, 64)
-
-			if err == nil {
-				m.SaveCounterVal(strings.ToLower(nameMetric), i)
-			}
-			errConv = err
-
-		default:
-			w.WriteHeader(http.StatusNotImplemented)
-			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-			log.Print(logtext + " Не определен тип метрики ")
-			return
 		}
 
 		if errConv != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			http.Error(w, "Ошибка конвертации значения ", http.StatusBadRequest)
-			log.Print(logtext + " Ошибка конвертации значения  ")
-			return
+			w.WriteHeader(http.StatusNotImplemented)
+			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("application-type", "text/plain")
-		w.Write([]byte(valueMetric))
-	}
+		switch strings.ToLower(dataMetrics.MType) {
+		case "gauge":
+			m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 
+		case "counter":
+			m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
+
+		default:
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
+		}
+	}
 }
 
 func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
@@ -119,21 +103,11 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			logtext = "*************** handler value Json " + r.URL.String()
 			log.Println(logtext)
 
-			body, bodyErr := ioutil.ReadAll(r.Body)
-			r.Body.Close()
-			if bodyErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-				log.Print(logtext + " Ошибка открытия тела запроса")
-				return
-			}
-
-			dataMetrics := model.Metrics{}
-			jsonErr := json.Unmarshal(body, &dataMetrics)
+			dataMetrics, jsonErr := bodyData(r)
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
-				log.Print(logtext + " Ошибка дессериализации" + string(body))
+				log.Print(logtext + " Ошибка дессериализации")
 				return
 			}
 
@@ -155,7 +129,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			default:
 				w.WriteHeader(http.StatusNotFound)
 				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
-				log.Print(logtext + " Не найдена метрика " + string(body))
+				log.Print(logtext + " Не найдена метрика ")
 				return
 			}
 
@@ -172,7 +146,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не определен тип метрики", http.StatusNotFound)
-			log.Print(logtext + " Не определен тип метрики" + string(body))
+			log.Print(logtext + " Не определен тип метрики")
 			return
 		}
 

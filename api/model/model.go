@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+
+	"github.com/egafa/yandexGo/config"
 )
 
 type Metric interface {
@@ -42,6 +44,24 @@ func NewMapMetric() MapMetric {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)
 	mapMetricVal.CounterData = make(map[string]int64)
+	return mapMetricVal
+}
+
+func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
+	mapMetricVal := NewMapMetric()
+
+	if cfg.StoreFile != "" {
+		mapMetricVal.FileName = cfg.StoreFile
+	}
+
+	if cfg.StoreInterval == 0 {
+		mapMetricVal.FlagSave = true
+	}
+
+	if cfg.Restore {
+		mapMetricVal.LoadFromFile()
+	}
+
 	return mapMetricVal
 }
 
