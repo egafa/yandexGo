@@ -72,8 +72,8 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		}
 
 		if errConv != nil {
-			w.WriteHeader(http.StatusNotImplemented)
-			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
+			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 		}
 
 		switch strings.ToLower(dataMetrics.MType) {
