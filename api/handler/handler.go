@@ -45,8 +45,8 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 		} else {
 
-			dataMetrics.ID = chi.URLParam(r, "typeMetric")
-			dataMetrics.MType = chi.URLParam(r, "nammeMetric")
+			dataMetrics.ID = chi.URLParam(r, "nammeMetric")
+			dataMetrics.MType = chi.URLParam(r, "typeMetric")
 			valueMetric := chi.URLParam(r, "valueMetric")
 
 			switch strings.ToLower(dataMetrics.MType) {
