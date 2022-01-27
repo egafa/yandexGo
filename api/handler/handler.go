@@ -42,7 +42,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			dataMetrics, errConv = bodyData(r)
 			if errConv != nil {
-				w.WriteHeader(http.StatusNotImplemented)
+				//w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusBadRequest)
 				return
 			}
@@ -67,7 +67,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 				errConv = err
 			default:
-				w.WriteHeader(http.StatusBadRequest)
+				//w.WriteHeader(http.StatusBadRequest)
 				http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 				return
 			}
@@ -75,7 +75,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		}
 
 		if errConv != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			//w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 			return
 		}
@@ -92,7 +92,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 
 		default:
-			w.WriteHeader(http.StatusBadRequest)
+			//w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 		}
 	}
@@ -109,7 +109,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			dataMetrics, jsonErr := bodyData(r)
 			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
+				//w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации")
 				return
@@ -131,7 +131,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 
 			default:
-				w.WriteHeader(http.StatusBadRequest)
+				//w.WriteHeader(http.StatusBadRequest)
 				http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 				log.Print(logtext + " Не найдена метрика ")
 				return
@@ -148,7 +148,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 			}
 
-			w.WriteHeader(http.StatusBadRequest)
+			//w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 			log.Print(logtext + " Не определен тип метрики")
 			return
@@ -177,7 +177,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 		}
 
-		w.WriteHeader(http.StatusBadRequest)
+		//w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, "Не определен тип метрики", http.StatusBadRequest)
 		log.Print(logtext + " Не определен тип метрики " + typeMetric + "  " + nameMetric)
 
