@@ -50,21 +50,23 @@ func main() {
 	}
 
 	idleConnsClosed := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-sigint
 
 		// We received an interrupt signal, shut down.
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(ctx); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
 		log.Print("HTTP server Shutdown")
 		close(idleConnsClosed)
+		cancel()
 	}()
 
-	go SaveToFileTimer(mapMetric, cfg)
+	go SaveToFileTimer(ctx, mapMetric, cfg)
 
 	log.Print("Запуск сервера HTTP")
 
@@ -80,12 +82,19 @@ func main() {
 
 }
 
-func SaveToFileTimer(m model.MapMetric, cfg *config.Config_Server) {
+func SaveToFileTimer(ctx context.Context, m model.MapMetric, cfg *config.Config_Server) {
 	if cfg.StoreInterval == 0 {
 		return
 	}
 	for {
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			m.SaveToFile()
+		}
 		time.Sleep(time.Duration(cfg.StoreInterval) * time.Second)
-		m.SaveToFile()
+
 	}
 }
