@@ -1,5 +1,13 @@
 package model
 
+import (
+	"encoding/json"
+	"log"
+	"os"
+
+	"github.com/egafa/yandexGo/config"
+)
+
 type Metric interface {
 	SaveGaugeVal(nameMetric string, value float64)
 	GetGaugeVal(nameMetric string) (float64, bool)
@@ -10,8 +18,10 @@ type Metric interface {
 }
 
 type MapMetric struct {
-	GaugeData   map[string]float64
-	CounterData map[string]int64
+	GaugeData   map[string]float64 `json:"GaugeData"`
+	CounterData map[string]int64   `json:"CounterData"`
+	FlagSave    bool               `json:"-"`
+	FileName    string             `json:"-"`
 }
 
 type GaugeTemplateMetric struct {
@@ -23,6 +33,13 @@ type CounterTemplateMetric struct {
 	Data       map[string]int64
 }
 
+type Metrics struct {
+	ID    string   `json:"id"`              // имя метрики
+	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+}
+
 func NewMapMetric() MapMetric {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)
@@ -30,8 +47,82 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
+func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
+	mapMetricVal := NewMapMetric()
+
+	if cfg.StoreFile != "" {
+		mapMetricVal.FileName = cfg.StoreFile
+	}
+
+	if cfg.StoreInterval == 0 {
+		mapMetricVal.FlagSave = true
+	}
+
+	if cfg.Restore {
+		mapMetricVal.LoadFromFile()
+	}
+
+	return mapMetricVal
+}
+
+func (m MapMetric) SetFileName(fname string) {
+	m.FileName = fname
+}
+
+func (m *MapMetric) SetFlagSave(fl bool) {
+	m.FlagSave = fl
+}
+
+func (m MapMetric) SaveToFile() error {
+	//var MapMetricToSave MapMetric
+
+	file, err := os.Create(m.FileName)
+	if err != nil {
+		log.Println("Ошибка создания файла: ", m.FileName, err.Error())
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(m)
+	if err != nil {
+		log.Println("Ошибка сериализации: ", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (m MapMetric) LoadFromFile() error {
+	//var MapMetricToSave MapMetric
+
+	if m.FileName == "" {
+		return nil
+	}
+
+	file, err := os.OpenFile(m.FileName, os.O_RDONLY, 0777)
+	if err != nil {
+		log.Println("Ошибка открытия файла: ", m.FileName, err.Error())
+		return err
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&m)
+	if err != nil {
+		log.Println("Ошибка десериализации: ", err.Error())
+		return err
+
+	}
+
+	return nil
+}
+
 func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
 	m.GaugeData[nameMetric] = value
+	if m.FlagSave {
+		m.SaveToFile()
+	}
 }
 
 func (m MapMetric) GetGaugeVal(nameMetric string) (float64, bool) {
@@ -51,6 +142,10 @@ func (m MapMetric) SaveCounterVal(nameMetric string, value int64) {
 		m.CounterData[nameMetric] = v + value
 	} else {
 		m.CounterData[nameMetric] = value
+	}
+
+	if m.FlagSave {
+		m.SaveToFile()
 	}
 }
 
@@ -86,4 +181,19 @@ func (m MapMetric) GetCounterMetricTemplate() CounterTemplateMetric {
 	res.Data = m.CounterData
 
 	return res
+}
+
+func (m MapMetric) SetData(GaugeData map[string]float64, CounterData map[string]int64) {
+
+	m.GaugeData = make(map[string]float64)
+	m.CounterData = make(map[string]int64)
+
+	for key, value := range GaugeData {
+		m.GaugeData[key] = value
+	}
+
+	for key1, value1 := range CounterData {
+		m.CounterData[key1] = value1
+	}
+
 }

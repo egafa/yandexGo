@@ -7,18 +7,22 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 
-	addr := "127.0.0.1:8080"
+	cfg := config.LoadConfigServer()
+	log.Println("Запуск Сервера ", cfg.AddrServer)
+	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore)
 
-	mapMetric := model.NewMapMetric() //избавился от глобальной переменной
+	mapMetric := model.NewMapMetricCongig(cfg)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -42,23 +46,29 @@ func main() {
 
 	srv := &http.Server{
 		Handler: r,
-		Addr:    addr,
+		Addr:    cfg.AddrServer,
 	}
-	//srv.Addr = addr
 
 	idleConnsClosed := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 		<-sigint
 
 		// We received an interrupt signal, shut down.
-		if err := srv.Shutdown(context.Background()); err != nil {
+		if err := srv.Shutdown(ctx); err != nil {
 			// Error from closing listeners, or context timeout:
 			log.Printf("HTTP server Shutdown: %v", err)
 		}
+		log.Print("HTTP server Shutdown")
 		close(idleConnsClosed)
+		cancel()
 	}()
+
+	go SaveToFileTimer(ctx, mapMetric, cfg)
+
+	log.Print("Запуск сервера HTTP")
 
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		// Error starting or closing listener:
@@ -67,4 +77,24 @@ func main() {
 
 	<-idleConnsClosed
 
+	//SaveMapMetric(mapMetric, cfg)
+	log.Print("HTTP server close")
+
+}
+
+func SaveToFileTimer(ctx context.Context, m model.MapMetric, cfg *config.Config_Server) {
+	if cfg.StoreInterval == 0 {
+		return
+	}
+	for {
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			m.SaveToFile()
+		}
+		time.Sleep(time.Duration(cfg.StoreInterval) * time.Second)
+
+	}
 }

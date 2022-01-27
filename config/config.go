@@ -1,0 +1,92 @@
+package config
+
+import (
+	"flag"
+	"os"
+	"time"
+)
+
+type Config_Agent struct {
+	AddrServer     string
+	PollInterval   int
+	ReportInterval int
+	Timeout        int
+	DirName        string
+}
+
+type Config_Server struct {
+	AddrServer    string
+	StoreInterval float64
+	StoreFile     string
+	Restore       bool
+	Timeout       int
+}
+
+// LoadConfig creates a Config object that is filled with values from environment variables or set default values
+func LoadConfigAgent() *Config_Agent {
+
+	AddrServerEnv := "ADDRESS"
+	PollIntervalEnv := "POLLINTERVAL"
+	ReportIntervalEnv := "REPORTINTERVAL"
+
+	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
+	PollIntervalStr := flag.String("p", "2s", "интервал получения метрик")
+	ReportIntervalStr := flag.String("r", "10s", "интервал отправки метрик")
+	flag.Parse()
+
+	SetVal(AddrServerEnv, AddrServer)
+	SetVal(PollIntervalEnv, PollIntervalStr)
+	SetVal(ReportIntervalEnv, ReportIntervalStr)
+
+	PollInterval, _ := time.ParseDuration(*PollIntervalStr)
+	ReportInterval, _ := time.ParseDuration(*ReportIntervalStr)
+
+	return &Config_Agent{
+		AddrServer:     *AddrServer,
+		PollInterval:   int(PollInterval.Seconds()),
+		ReportInterval: int(ReportInterval.Seconds()),
+		Timeout:        1,
+	}
+}
+
+func LoadConfigServer() *Config_Server {
+
+	AddrServerEnv := "ADDRESS"
+	StoreIntervalEnv := "STORE_INTERVAL"
+	StoreFileEnv := "STORE_FILE"
+	Restorenv := "RESTORE"
+
+	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
+	StoreFile := flag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
+	RestoreStr := flag.String("r", "false", "Восстановить из файла")
+	StoreIntervalStr := flag.String("i", "5m", "Интервал сохранения в файл")
+
+	flag.Parse()
+
+	SetVal(AddrServerEnv, AddrServer)
+	SetVal(StoreFileEnv, StoreFile)
+	SetVal(Restorenv, RestoreStr)
+	SetVal(StoreIntervalEnv, StoreIntervalStr)
+
+	Restore := false
+	if *RestoreStr == "true" {
+		Restore = true
+	}
+
+	StoreInterval, _ := time.ParseDuration(*StoreIntervalStr)
+
+	return &Config_Server{
+		AddrServer:    *AddrServer,
+		StoreInterval: StoreInterval.Seconds(),
+		StoreFile:     *StoreFile,
+		Restore:       Restore,
+		Timeout:       1,
+	}
+}
+
+func SetVal(env string, val *string) {
+	valEnv, ok := os.LookupEnv(env)
+	if ok {
+		*val = valEnv
+	}
+}
