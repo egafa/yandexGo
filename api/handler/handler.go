@@ -132,17 +132,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			logtext = "*************** handler value Json " + r.URL.String()
 			log.Println(logtext)
 
-			body, bodyErr := ioutil.ReadAll(r.Body)
-			r.Body.Close()
-			if bodyErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-				log.Print(logtext + " Ошибка открытия тела запроса")
-				return
-			}
-
-			dataMetrics := model.Metrics{}
-			jsonErr := json.Unmarshal(body, &dataMetrics)
+			dataMetrics, jsonErr, body := bodyData(r)
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
