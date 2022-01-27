@@ -11,11 +11,20 @@ import (
 	"strings"
 
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 )
 
 func bodyData(r *http.Request) (model.Metrics, error, []byte) {
-	body, bodyErr := ioutil.ReadAll(r.Body)
+	var body []byte
+	var bodyErr error
+
+	defer r.Body.Close()
+	if r.Header.Get("Content-Encoding") == "gzip" {
+		body, bodyErr = zipcompess.Decompress(r.Body)
+	} else {
+		body, bodyErr = ioutil.ReadAll(r.Body)
+	}
 
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
@@ -41,9 +50,10 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		var valueMetric string
 
 		jsonFlag = false
-		logtext = "***************************** handler update Json " + r.URL.String()
+		logtext = "******* handler update " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
 
 		if r.Header.Get("Content-Type") == "application/json" {
+			logtext = logtext + " ******* JSON"
 			jsonFlag = true
 
 			log.Println(logtext)
@@ -62,7 +72,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		} else {
 
-			logtext = " ****************************** handler update plain " + r.URL.String()
+			logtext = logtext + " ******* "
 			log.Println(logtext)
 
 			dataMetrics.ID = chi.URLParam(r, "nammeMetric")
@@ -128,8 +138,10 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		var logtext string
 
+		logtext = "******* Value " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
+
 		if r.Method == http.MethodPost && r.Header.Get("Content-Type") == "application/json" {
-			logtext = "*************** handler value Json " + r.URL.String()
+			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
 			dataMetrics, jsonErr, body := bodyData(r)
@@ -179,7 +191,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			return
 		}
 
-		logtext = "*************** handler value plain " + r.URL.String()
+		logtext = logtext + " ******* "
 		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
