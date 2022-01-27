@@ -64,7 +64,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
-				sliceMetric := make([]dataRequest, len(keysMetric)+2)
+				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2. Почему код хрупкий? Две наших метрики, поэтому + 2. Можно в массив keysMetric добавить наши метрики, но тогда при обходе этого массива  надо будет if вставлять
 
 				m := model.Metrics{}
 				m.ID = "PollCount"
@@ -174,7 +174,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	dataChannel := make(chan []dataRequest, len(namesMetric)*100)
+	dataChannel := make(chan []dataRequest) //, len(namesMetric))
 
 	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
