@@ -52,7 +52,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
-				http.Error(w, "Ошибка дессериализации", http.StatusBadRequest)
+				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
 			}
@@ -86,8 +86,9 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			if errConv == nil {
 				m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 				log.Print(logtext + " Обработана метрика " + strBody)
+
+				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 			}
 
 		case "counter":
@@ -100,8 +101,9 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 			if errConv == nil {
 				m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 				log.Print(logtext + " Обработана метрика " + strBody)
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 			}
 		default:
 			//w.WriteHeader(http.StatusNotImplemented)
@@ -117,9 +119,6 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
-		w.Header().Set("application-type", "text/plain")
-		w.Write([]byte(valueMetric))
 	}
 
 }
