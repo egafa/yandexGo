@@ -21,7 +21,7 @@ func main() {
 
 	cfg := config.LoadConfigServer()
 	log.Println("Запуск Сервера ", cfg.AddrServer)
-	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore)
+	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore, " Каталог шаблонов ", cfg.TemplateDir)
 
 	mapMetric := model.NewMapMetricCongig(cfg)
 
