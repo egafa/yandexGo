@@ -12,6 +12,7 @@ import (
 	handler "github.com/egafa/yandexGo/api/handler"
 	model "github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
+	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -29,6 +30,7 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(zipcompess.GzipHandle)
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", handler.ListMetricsChiHandleFunc(mapMetric))
