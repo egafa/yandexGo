@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/config"
 	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 )
@@ -221,14 +222,18 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 	}
 }
 
-func ListMetricsChiHandleFunc(m model.Metric) http.HandlerFunc {
+func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		logtext := "*******  List Metric " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding") + " Accept-Encoding " + r.Header.Get("Accept-Encoding")
+		log.Println(logtext)
+
 		CounterData := m.GetCounterMetricTemplate()
 		GaugeData := m.GetGaugetMetricTemplate()
 
 		files := []string{
-			"./internal/temptable.tmpl",
+			cfg.TemplateDir + "temptable.tmpl",
 		}
 
 		ts, err := template.ParseFiles(files...)

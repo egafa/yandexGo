@@ -33,7 +33,7 @@ func main() {
 	r.Use(zipcompess.GzipHandle)
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", handler.ListMetricsChiHandleFunc(mapMetric))
+		r.Get("/", handler.ListMetricsChiHandleFunc(mapMetric, cfg))
 	})
 
 	r.Route("/update", func(r chi.Router) {

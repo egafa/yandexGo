@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type Config_Server struct {
 	StoreFile     string
 	Restore       bool
 	Timeout       int
+	TemplateDir   string
 }
 
 // LoadConfig creates a Config object that is filled with values from environment variables or set default values
@@ -55,6 +57,13 @@ func LoadConfigServer() *Config_Server {
 	StoreIntervalEnv := "STORE_INTERVAL"
 	StoreFileEnv := "STORE_FILE"
 	Restorenv := "RESTORE"
+	TemplateDirEnv := "TEMPLATE_DIR"
+
+	p, err := os.Executable()
+	var TemplateDirStr string
+	if err != nil {
+		TemplateDirStr = filepath.Dir(p) + "/"
+	}
 
 	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
 	StoreFile := flag.String("f", "/tmp/devops-metrics-db.json", "имя файла")
@@ -67,6 +76,7 @@ func LoadConfigServer() *Config_Server {
 	SetVal(StoreFileEnv, StoreFile)
 	SetVal(Restorenv, RestoreStr)
 	SetVal(StoreIntervalEnv, StoreIntervalStr)
+	SetVal(TemplateDirEnv, &TemplateDirStr)
 
 	Restore := false
 	if *RestoreStr == "true" {
@@ -81,6 +91,7 @@ func LoadConfigServer() *Config_Server {
 		StoreFile:     *StoreFile,
 		Restore:       Restore,
 		Timeout:       1,
+		TemplateDir:   TemplateDirStr,
 	}
 }
 

@@ -125,7 +125,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				}
 
 				dataChannel <- sliceMetric
-				//time.Sleep(time.Duration(cfg.pollInterval) * time.Second)
+				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
 			}
 		}
 	}
