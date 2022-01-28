@@ -16,7 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func bodyData(r *http.Request) (model.Metrics, error, []byte) {
+func bodyData(r *http.Request) (model.Metrics, []byte, error) {
 	var body []byte
 	var bodyErr error
 
@@ -29,16 +29,16 @@ func bodyData(r *http.Request) (model.Metrics, error, []byte) {
 
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
-		return model.Metrics{}, bodyErr, nil
+		return model.Metrics{}, nil, bodyErr
 	}
 
 	dataMetrics := model.Metrics{}
 	jsonErr := json.Unmarshal(body, &dataMetrics)
 	if jsonErr != nil {
-		return model.Metrics{}, jsonErr, nil
+		return model.Metrics{}, nil, jsonErr
 	}
 
-	return dataMetrics, nil, body
+	return dataMetrics, body, nil
 }
 
 func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
@@ -59,7 +59,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			log.Println(logtext)
 
-			dataMetrics1, jsonErr, body := bodyData(r)
+			dataMetrics1, body, jsonErr := bodyData(r)
 
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
@@ -145,7 +145,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
-			dataMetrics, jsonErr, body := bodyData(r)
+			dataMetrics, body, jsonErr := bodyData(r)
 			if jsonErr != nil {
 				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
