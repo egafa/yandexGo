@@ -62,7 +62,7 @@ func LoadConfigServer() *Config_Server {
 	p, err := os.Executable()
 	var TemplateDirStr string
 	if err != nil {
-		TemplateDirStr = filepath.Dir(p) + "/"
+		TemplateDirStr = filepath.Dir(p) + "/internal/"
 	}
 
 	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")

@@ -239,6 +239,7 @@ func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.Ha
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
+			log.Println("Ошибка " + err.Error() + " парсинга шаблона " + cfg.TemplateDir + "temptable.tmpl")
 			return
 		}
 
