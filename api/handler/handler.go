@@ -243,6 +243,8 @@ func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.Ha
 			return
 		}
 
+		w.Header().Set("Content-Type", "text/html")
+
 		err = ts.Execute(w, CounterData)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -255,7 +257,6 @@ func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.Ha
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -57,7 +57,7 @@ func LoadConfigServer() *Config_Server {
 	StoreIntervalEnv := "STORE_INTERVAL"
 	StoreFileEnv := "STORE_FILE"
 	Restorenv := "RESTORE"
-	//TemplateDirEnv := "TEMPLATE_DIR"
+	TemplateDirEnv := "TEMPLATE_DIR"
 
 	p, err := os.Executable()
 	var TemplateDirStr string
@@ -76,7 +76,7 @@ func LoadConfigServer() *Config_Server {
 	SetVal(StoreFileEnv, StoreFile)
 	SetVal(Restorenv, RestoreStr)
 	SetVal(StoreIntervalEnv, StoreIntervalStr)
-	//SetVal(TemplateDirEnv, &TemplateDirStr)
+	SetVal(TemplateDirEnv, &TemplateDirStr)
 
 	Restore := false
 	if *RestoreStr == "true" {
