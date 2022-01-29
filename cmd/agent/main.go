@@ -191,7 +191,7 @@ func main() {
 
 	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
-	//time.Sleep(1 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	stopchanel := make(chan int, 1)
 	go sendMetric(ctx, dataChannel, stopchanel, *cfg)

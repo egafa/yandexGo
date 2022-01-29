@@ -142,7 +142,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 }
 
-func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
+func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var logtext string
@@ -183,6 +183,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 
 			if ok {
+				dataMetrics.Hash = model.GetHash(dataMetrics, cfg.Key)
 				byt, err := json.Marshal(dataMetrics)
 				if err == nil {
 					w.Header().Set("Content-Type", "application/json")

@@ -46,9 +46,9 @@ type Metrics struct {
 
 func GetHash(m Metrics, key string) string {
 
-	//if len(key) == 0 {
-	//	return ""
-	//}
+	if len(key) == 0 {
+		return ""
+	}
 
 	var src string
 	switch m.MType {
