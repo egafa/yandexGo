@@ -69,7 +69,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 			}
 
 			h := model.GetHash(dataMetrics1, cfg.Key)
-			if dataMetrics1.Hash != h { //len(cfg.Key) > 0 &&
+			if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
 				http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
 				log.Print(logtext + " Хэш ключа не совпал " + string(body))
 				return
