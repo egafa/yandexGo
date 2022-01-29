@@ -65,7 +65,7 @@ func GetHash(m Metrics, key string) string {
 	h.Write([]byte(src))
 	dst := h.Sum(nil)
 
-	res := fmt.Sprintf("%v", dst)
+	res := fmt.Sprintf("%x", dst)
 	return res
 }
 
