@@ -21,7 +21,7 @@ import (
 
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
-	//"github.com/egafa/yandexGo/zipcompess"
+	"github.com/egafa/yandexGo/zipcompess"
 )
 
 type dataRequest struct {
@@ -30,7 +30,7 @@ type dataRequest struct {
 	body   []byte
 }
 
-func newRequest(m interface{}, addr, method string) (dataRequest, error) {
+func newRequest(m interface{}, addr, method string, compress bool) (dataRequest, error) {
 	_, err := url.Parse(addr)
 	if err != nil {
 		log.Fatal("Ошибка парсера URL", err.Error())
@@ -43,9 +43,11 @@ func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 		return r, err
 	}
 
-	//byt, err = zipcompess.Compress(byt)
-	if err != nil {
-		log.Fatal("Ошибка сжатия данных", err.Error())
+	if compress {
+		byt, err = zipcompess.Compress(byt)
+		if err != nil {
+			log.Fatal("Ошибка сжатия данных", err.Error())
+		}
 	}
 
 	r.addr = addr
@@ -79,7 +81,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				m.Delta = &delta
 				m.Hash = model.GetHash(m, cfg.Key)
 
-				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost)
+				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost, cfg.Compress)
 				if err == nil {
 					sliceMetric[0] = req
 				}
@@ -92,7 +94,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				m.Value = &mValue
 				m.Hash = model.GetHash(m, cfg.Key)
 
-				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost)
+				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost, cfg.Compress)
 				if err == nil {
 					sliceMetric[1] = req
 				}
@@ -119,7 +121,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 					}
 					m.Hash = model.GetHash(m, cfg.Key)
 
-					req, err := newRequest(m, addr, http.MethodPost)
+					req, err := newRequest(m, addr, http.MethodPost, cfg.Compress)
 					if err == nil {
 						sliceMetric[i+2] = req
 						//log.Println("Добавление запроса ", req.addr)
@@ -155,7 +157,9 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 						log.Fatal("Не удалось сформировать запрос ", errReq)
 					}
 					req.Header.Set("Content-Type", "application/json")
-					req.Header.Set("Content-Encoding", "/////gzip")
+					if cfg.Compress {
+						req.Header.Set("Content-Encoding", "gzip")
+					}
 
 					_, err := client.Do(req)
 					if err == nil {
