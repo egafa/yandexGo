@@ -53,9 +53,9 @@ func GetHash(m Metrics, key string) string {
 	var src string
 	switch m.MType {
 	case "counter":
-		src = fmt.Sprintf("%s:counter:%v", m.ID, *m.Delta)
+		src = fmt.Sprintf("%s:counter:%d", m.ID, *m.Delta)
 	case "gauge":
-		src = fmt.Sprintf("%s:gauge:%v", m.ID, *m.Value)
+		src = fmt.Sprintf("%s:gauge:%f", m.ID, *m.Value)
 	default:
 		return ""
 
