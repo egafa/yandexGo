@@ -86,10 +86,9 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 					sliceMetric[0] = req
 				}
 
+				m = model.Metrics{}
 				m.ID = "RandomValue"
 				m.MType = "gauge"
-				delta, _ = strconv.ParseInt("0", 10, 64)
-				m.Delta = &delta
 				mValue := rand.Float64()
 				m.Value = &mValue
 				m.Hash = model.GetHash(m, cfg.Key)
