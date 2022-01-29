@@ -41,7 +41,7 @@ func bodyData(r *http.Request) (model.Metrics, []byte, error) {
 	return dataMetrics, body, nil
 }
 
-func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
+func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logtext string
 
@@ -62,10 +62,18 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			dataMetrics1, body, jsonErr := bodyData(r)
 
 			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
+				//w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
+			}
+
+			h := model.GetHash(dataMetrics1, cfg.Key)
+			if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
+				http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
+				log.Print(logtext + " Хэш ключа не совпал " + string(body))
+				return
+
 			}
 
 			dataMetrics = dataMetrics1
@@ -147,7 +155,6 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 			dataMetrics, body, jsonErr := bodyData(r)
 			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации" + string(body))
 				return
@@ -169,7 +176,7 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 
 			default:
-				//w.WriteHeader(http.StatusNotFound)
+
 				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 				log.Print(logtext + " Не найдена метрика " + string(body))
 				return
@@ -186,7 +193,6 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 			}
 
-			//w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 			log.Print(logtext + " Не определен тип метрики" + string(body))
 			return
@@ -215,7 +221,6 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 		}
 
-		//w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 		log.Print(logtext + " Не определен тип метрики " + typeMetric + "  " + nameMetric)
 

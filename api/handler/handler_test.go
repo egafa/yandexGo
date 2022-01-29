@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,8 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 		statusCode int
 	}
 
-	mapMetric := model.NewMapMetric()
+	cfg := config.LoadConfigServer()
+	mapMetric := model.NewMapMetricCongig(cfg)
 
 	tests := []struct {
 		name    string
@@ -39,7 +41,7 @@ func TestUpdateMetricHandlerChi(t *testing.T) {
 
 			r := chi.NewRouter()
 			r.Route("/update", func(r chi.Router) {
-				r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", UpdateMetricHandlerChi(mapMetric))
+				r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", UpdateMetricHandlerChi(mapMetric, cfg))
 			})
 
 			request := httptest.NewRequest(http.MethodPost, tt.request, nil)

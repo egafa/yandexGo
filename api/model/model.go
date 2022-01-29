@@ -1,7 +1,10 @@
 package model
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
@@ -38,6 +41,32 @@ type Metrics struct {
 	MType string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
+}
+
+func GetHash(m Metrics, key string) string {
+
+	if len(key) == 0 {
+		return ""
+	}
+
+	var src string
+	switch m.MType {
+	case "counter":
+		src = fmt.Sprintf("%s:counter:%v", m.ID, *m.Delta)
+	case "gauge":
+		src = fmt.Sprintf("%s:gauge:%v", m.ID, *m.Value)
+	default:
+		return ""
+
+	}
+
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write([]byte(src))
+	dst := h.Sum(nil)
+
+	res := fmt.Sprintf("%v", dst)
+	return res
 }
 
 func NewMapMetric() MapMetric {

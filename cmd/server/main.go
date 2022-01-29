@@ -37,8 +37,8 @@ func main() {
 	})
 
 	r.Route("/update", func(r chi.Router) {
-		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric))
-		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric))
+		r.Post("/{typeMetric}/{nammeMetric}/{valueMetric}", handler.UpdateMetricHandlerChi(mapMetric, cfg))
+		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric, cfg))
 	})
 
 	r.Route("/value", func(r chi.Router) {

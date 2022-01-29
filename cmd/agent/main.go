@@ -77,6 +77,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				m.MType = "counter"
 				delta := int64(1)
 				m.Delta = &delta
+				m.Hash = model.GetHash(m, cfg.Key)
 
 				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost)
 				if err == nil {
@@ -89,6 +90,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				m.Delta = &delta
 				mValue := rand.Float64()
 				m.Value = &mValue
+				m.Hash = model.GetHash(m, cfg.Key)
 
 				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost)
 				if err == nil {
@@ -115,6 +117,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 						m.Delta = &i
 						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, i)
 					}
+					m.Hash = model.GetHash(m, cfg.Key)
 
 					req, err := newRequest(m, addr, http.MethodPost)
 					if err == nil {
