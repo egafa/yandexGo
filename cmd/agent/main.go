@@ -21,7 +21,7 @@ import (
 
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
-	"github.com/egafa/yandexGo/zipcompess"
+	//"github.com/egafa/yandexGo/zipcompess"
 )
 
 type dataRequest struct {
@@ -43,7 +43,7 @@ func newRequest(m interface{}, addr, method string) (dataRequest, error) {
 		return r, err
 	}
 
-	byt, err = zipcompess.Compress(byt)
+	//byt, err = zipcompess.Compress(byt)
 	if err != nil {
 		log.Fatal("Ошибка сжатия данных", err.Error())
 	}
@@ -155,7 +155,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 						log.Fatal("Не удалось сформировать запрос ", errReq)
 					}
 					req.Header.Set("Content-Type", "application/json")
-					req.Header.Set("Content-Encoding", "gzip")
+					req.Header.Set("Content-Encoding", "/////gzip")
 
 					_, err := client.Do(req)
 					if err == nil {
