@@ -35,20 +35,18 @@ func LoadConfigAgent() *Config_Agent {
 	PollIntervalEnv := "POLLINTERVAL"
 	ReportIntervalEnv := "REPORTINTERVAL"
 	KeyEnv := "KEY"
-	DatabaseDSNEnv := "DATABASE_DSN"
 
 	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
 	PollIntervalStr := flag.String("p", "2s", "интервал получения метрик")
 	ReportIntervalStr := flag.String("r", "10s", "интервал отправки метрик")
 	KeyStr := flag.String("k", "", "ключ для хеш")
-	DatabaseDSN := flag.String("d", "", "строка соединения c базой данных")
+
 	flag.Parse()
 
 	SetVal(AddrServerEnv, AddrServer)
 	SetVal(PollIntervalEnv, PollIntervalStr)
 	SetVal(ReportIntervalEnv, ReportIntervalStr)
 	SetVal(KeyEnv, KeyStr)
-	SetVal(DatabaseDSNEnv, DatabaseDSN)
 
 	PollInterval, _ := time.ParseDuration(*PollIntervalStr)
 	ReportInterval, _ := time.ParseDuration(*ReportIntervalStr)
@@ -71,6 +69,7 @@ func LoadConfigServer() *Config_Server {
 	Restorenv := "RESTORE"
 	TemplateDirEnv := "TEMPLATE_DIR"
 	KeyEnv := "KEY"
+	DatabaseDSNEnv := "DATABASE_DSN"
 
 	p, err := os.Executable()
 	var TemplateDirStr string
@@ -84,6 +83,9 @@ func LoadConfigServer() *Config_Server {
 	StoreIntervalStr := flag.String("i", "5m", "Интервал сохранения в файл")
 	KeyStr := flag.String("k", "", "ключ для хеш")
 
+	dsn := "postgres://postgres:qwerty@localhost:5432/exam1?sslmode=disable"
+	DatabaseDSN := flag.String("d", dsn, "строка соединения c базой данных")
+
 	flag.Parse()
 
 	SetVal(AddrServerEnv, AddrServer)
@@ -92,6 +94,7 @@ func LoadConfigServer() *Config_Server {
 	SetVal(StoreIntervalEnv, StoreIntervalStr)
 	SetVal(TemplateDirEnv, &TemplateDirStr)
 	SetVal(KeyEnv, KeyStr)
+	SetVal(DatabaseDSNEnv, DatabaseDSN)
 
 	Restore := false
 	if *RestoreStr == "true" {
@@ -108,6 +111,7 @@ func LoadConfigServer() *Config_Server {
 		Timeout:       1,
 		TemplateDir:   TemplateDirStr,
 		Key:           *KeyStr,
+		DatabaseDSN:   *DatabaseDSN,
 	}
 }
 
