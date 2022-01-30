@@ -31,12 +31,13 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	conn, err := pgx.Connect(ctx, cfg.DatabaseDSN)
-	if err != nil {
-		log.Println("database error ", err.Error())
-		os.Exit(1)
+	if len(cfg.DatabaseDSN) > 0 {
+		conn, err := pgx.Connect(ctx, cfg.DatabaseDSN)
+		if err != nil {
+			log.Println("database error ", err.Error())
+		}
+		defer conn.Close(ctx)
 	}
-	defer conn.Close(ctx)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
