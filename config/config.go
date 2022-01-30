@@ -25,6 +25,7 @@ type Config_Server struct {
 	Timeout       int
 	TemplateDir   string
 	Key           string
+	DatabaseDSN   string
 }
 
 // LoadConfig creates a Config object that is filled with values from environment variables or set default values
@@ -34,17 +35,20 @@ func LoadConfigAgent() *Config_Agent {
 	PollIntervalEnv := "POLLINTERVAL"
 	ReportIntervalEnv := "REPORTINTERVAL"
 	KeyEnv := "KEY"
+	DatabaseDSNEnv := "DATABASE_DSN"
 
 	AddrServer := flag.String("a", "127.0.0.1:8080", "адрес сервера")
 	PollIntervalStr := flag.String("p", "2s", "интервал получения метрик")
 	ReportIntervalStr := flag.String("r", "10s", "интервал отправки метрик")
 	KeyStr := flag.String("k", "", "ключ для хеш")
+	DatabaseDSN := flag.String("d", "", "строка соединения c базой данных")
 	flag.Parse()
 
 	SetVal(AddrServerEnv, AddrServer)
 	SetVal(PollIntervalEnv, PollIntervalStr)
 	SetVal(ReportIntervalEnv, ReportIntervalStr)
 	SetVal(KeyEnv, KeyStr)
+	SetVal(DatabaseDSNEnv, DatabaseDSN)
 
 	PollInterval, _ := time.ParseDuration(*PollIntervalStr)
 	ReportInterval, _ := time.ParseDuration(*ReportIntervalStr)

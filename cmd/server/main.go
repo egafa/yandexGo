@@ -15,6 +15,7 @@ import (
 	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v4"
 )
 
 func main() {
@@ -22,8 +23,20 @@ func main() {
 	cfg := config.LoadConfigServer()
 	log.Println("Запуск Сервера ", cfg.AddrServer)
 	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore, " Каталог шаблонов ", cfg.TemplateDir, " Key ", cfg.Key)
+	log.Println(" databse url ", cfg.DatabaseDSN)
 
 	mapMetric := model.NewMapMetricCongig(cfg)
+
+	//cfg.DatabaseDSN = "postgres://postgres:qwertyd@localhost:5432/exam1"
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	conn, err := pgx.Connect(ctx, cfg.DatabaseDSN)
+	if err != nil {
+		log.Println("database error ", err.Error())
+		os.Exit(1)
+	}
+	defer conn.Close(ctx)
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -52,7 +65,7 @@ func main() {
 	}
 
 	idleConnsClosed := make(chan struct{})
-	ctx, cancel := context.WithCancel(context.Background())
+
 	go func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
