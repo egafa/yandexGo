@@ -61,7 +61,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
-	for { //i := 0; i < 60; i++ { Здесь бесконечный цикл, это я тесты проводил
+	for { //i := 0; i < 60; i++
 
 		select {
 		case <-ctx.Done():
@@ -72,7 +72,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
-				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2. Почему код хрупкий? Две наших метрики, поэтому + 2. Можно в массив keysMetric добавить наши метрики, но тогда при обходе этого массива  надо будет if вставлять
+				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2. Почему код хрупкий?
 
 				m := model.Metrics{}
 				m.ID = "PollCount"

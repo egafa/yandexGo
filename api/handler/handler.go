@@ -62,7 +62,6 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 			dataMetrics1, body, jsonErr := bodyData(r)
 
 			if jsonErr != nil {
-				//w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
@@ -125,14 +124,12 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 			}
 		default:
-			//w.WriteHeader(http.StatusNotImplemented)
 			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 			log.Print(logtext + " Не определен тип метрики ")
 			return
 		}
 
 		if errConv != nil {
-			//w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Ошибка конвертации значения ", http.StatusBadRequest)
 			log.Print(logtext + " Ошибка конвертации значения  ")
 			return
@@ -176,7 +173,6 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 				}
 
 			default:
-
 				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 				log.Print(logtext + " Не найдена метрика " + string(body))
 				return
