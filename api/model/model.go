@@ -122,6 +122,10 @@ func (m *MapMetric) SetFlagSave(fl bool) {
 func (m MapMetric) SaveToFile() error {
 	//var MapMetricToSave MapMetric
 
+	if m.DB != nil {
+		return storage.SaveToDatabase(m.DB, m.GaugeData)
+	}
+
 	file, err := os.Create(m.FileName)
 	if err != nil {
 		log.Println("Ошибка создания файла: ", m.FileName, err.Error())

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 
-	model "github.com/egafa/yandexGo/api/model"
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
@@ -33,31 +32,31 @@ func createTablles(db *sql.DB) error {
 	return err
 }
 
-func SaveToDatabase(m model.MapMetric) error {
+func SaveToDatabase(db *sql.DB, gaugeData map[string]float64) error {
 
-	tx, err := m.DB.Begin()
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	for name, val := range m.GaugeData {
-		rows, errSelect := m.DB.Query("SELECT * FROM phonebook WHERE name = &1", name)
+	for name, val := range gaugeData {
+		rows, errSelect := db.Query("select name from gauge where name=$1", name)
 		if errSelect != nil {
+			log.Println("database error Select", errSelect.Error())
 			return errSelect
 		}
 		defer rows.Close()
 
 		if rows.Next() {
-			_, err = tx.Exec("UPDATE gauge SET val = $1, "+
-				"WHERE name=$2",
-				val, name)
-
+			_, err = tx.Exec("UPDATE gauge SET val = $1, WHERE name=$2", val, name)
+			log.Println("database error UPDATE", err.Error())
+			return err
 		} else {
 
-			_, err := tx.Exec("INSERT INTO phonebook VALUES (default, $1, $2)",
-				name, val)
+			_, err := tx.Exec("INSERT INTO gauge (name, val) values($1, $2)", name, val)
 			if err != nil {
+				log.Println("database error INSERT", err.Error())
 				return err
 			}
 		}

@@ -28,6 +28,7 @@ func main() {
 	if mapMetric.DB != nil {
 		defer mapMetric.DB.Close()
 	}
+	mapMetric.SetFlagSave(true)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
