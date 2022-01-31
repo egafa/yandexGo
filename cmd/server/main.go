@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
 func main() {
@@ -27,15 +25,11 @@ func main() {
 	log.Println(" databse url ", cfg.DatabaseDSN)
 
 	mapMetric := model.NewMapMetricCongig(cfg)
+	if mapMetric.DB != nil {
+		defer mapMetric.DB.Close()
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-
-	db, err := sql.Open("pgx", cfg.DatabaseDSN)
-	if err == nil {
-		defer db.Close()
-	} else {
-		log.Println("database error ", err.Error())
-	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -49,7 +43,7 @@ func main() {
 	})
 
 	r.Route("/ping", func(r chi.Router) {
-		r.Get("/", handler.PingDBChiHandleFunc(ctx, db))
+		r.Get("/", handler.PingDBChiHandleFunc(mapMetric))
 	})
 
 	r.Route("/update", func(r chi.Router) {

@@ -3,12 +3,14 @@ package model
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/egafa/yandexGo/config"
+	"github.com/egafa/yandexGo/storage"
 )
 
 type Metric interface {
@@ -25,6 +27,7 @@ type MapMetric struct {
 	CounterData map[string]int64   `json:"CounterData"`
 	FlagSave    bool               `json:"-"`
 	FileName    string             `json:"-"`
+	DB          *sql.DB            `json:"-"`
 }
 
 type GaugeTemplateMetric struct {
@@ -42,6 +45,13 @@ type Metrics struct {
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 	Hash  string   `json:"hash,omitempty"`  // значение хеш-функции
+}
+
+type MetricsDB struct {
+	ID    string  `db:"id"`    // имя метрики
+	MType string  `db:"type"`  // параметр, принимающий значение gauge или counter
+	Delta int64   `db:"delta"` // значение метрики в случае передачи counter
+	Value float64 `db:"value"` // значение метрики в случае передачи gauge
 }
 
 func GetHash(m Metrics, key string) string {
@@ -79,7 +89,14 @@ func NewMapMetric() MapMetric {
 func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
 	mapMetricVal := NewMapMetric()
 
-	if cfg.StoreFile != "" {
+	if len(cfg.DatabaseDSN) > 0 {
+		db := storage.NewDB(cfg.DatabaseDSN)
+		if db != nil {
+			mapMetricVal.DB = db
+		}
+	}
+
+	if mapMetricVal.DB == nil && len(cfg.StoreFile) > 0 {
 		mapMetricVal.FileName = cfg.StoreFile
 	}
 

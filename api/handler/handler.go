@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -265,14 +263,14 @@ func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.Ha
 	}
 }
 
-func PingDBChiHandleFunc(ctx context.Context, db *sql.DB) http.HandlerFunc {
+func PingDBChiHandleFunc(m model.MapMetric) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		logtext := "*******  PingDB " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding") + " Accept-Encoding " + r.Header.Get("Accept-Encoding")
 		log.Println(logtext)
 
-		if err := db.PingContext(ctx); err != nil {
+		if err := m.DB.PingContext(r.Context()); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
