@@ -263,14 +263,16 @@ func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.Ha
 	}
 }
 
-func PingDBChiHandleFunc(m model.MapMetric) http.HandlerFunc {
+func PingDBChiHandleFunc(m model.Metric) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		logtext := "*******  PingDB " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding") + " Accept-Encoding " + r.Header.Get("Accept-Encoding")
 		log.Println(logtext)
 
-		if err := m.DB.PingContext(r.Context()); err != nil {
+		err := m.PingContext(r.Context())
+
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

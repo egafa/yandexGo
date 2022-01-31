@@ -26,6 +26,7 @@ type Config_Server struct {
 	TemplateDir   string
 	Key           string
 	DatabaseDSN   string
+	FlagDatabase  string
 }
 
 // LoadConfig creates a Config object that is filled with values from environment variables or set default values
@@ -70,6 +71,7 @@ func LoadConfigServer() *Config_Server {
 	TemplateDirEnv := "TEMPLATE_DIR"
 	KeyEnv := "KEY"
 	DatabaseDSNEnv := "DATABASE_DSN"
+	FlagDatabaseEnv := "FLAG_DATABASE"
 
 	p, err := os.Executable()
 	var TemplateDirStr string
@@ -86,6 +88,8 @@ func LoadConfigServer() *Config_Server {
 	dsn := "postgres://postgres:qwerty@localhost:5432/exam1?sslmode=disable"
 	DatabaseDSN := flag.String("d", dsn, "строка соединения c базой данных")
 
+	FlagDatabaseStr := flag.String("fd", "y", "хранить в базе данных")
+
 	flag.Parse()
 
 	SetVal(AddrServerEnv, AddrServer)
@@ -95,6 +99,7 @@ func LoadConfigServer() *Config_Server {
 	SetVal(TemplateDirEnv, &TemplateDirStr)
 	SetVal(KeyEnv, KeyStr)
 	SetVal(DatabaseDSNEnv, DatabaseDSN)
+	SetVal(FlagDatabaseEnv, FlagDatabaseStr)
 
 	Restore := false
 	if *RestoreStr == "true" {
@@ -112,6 +117,7 @@ func LoadConfigServer() *Config_Server {
 		TemplateDir:   TemplateDirStr,
 		Key:           *KeyStr,
 		DatabaseDSN:   *DatabaseDSN,
+		FlagDatabase:  *FlagDatabaseStr,
 	}
 }
 
