@@ -88,7 +88,7 @@ func LoadConfigServer() *Config_Server {
 	dsn := "postgres://postgres:qwerty@localhost:5432/exam1?sslmode=disable"
 	DatabaseDSN := flag.String("d", dsn, "строка соединения c базой данных")
 
-	FlagDatabaseStr := flag.String("fd", "n", "хранить в базе данных")
+	FlagDatabaseStr := flag.String("fd", "y", "хранить в базе данных")
 
 	flag.Parse()
 
