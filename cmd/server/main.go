@@ -25,7 +25,8 @@ func main() {
 	log.Println(" databse url ", cfg.DatabaseDSN)
 
 	var mapMetric model.Metric
-	if cfg.FlagDatabase == "y" {
+	//if cfg.FlagDatabase == "y" {
+	if len(cfg.DatabaseDSN) > 0 {
 		mapMetric = model.NewMetricDB(cfg)
 		defer mapMetric.Close()
 	} else {

@@ -85,8 +85,8 @@ func LoadConfigServer() *Config_Server {
 	StoreIntervalStr := flag.String("i", "5m", "Интервал сохранения в файл")
 	KeyStr := flag.String("k", "", "ключ для хеш")
 
-	dsn := "postgres://postgres:qwerty@localhost:5432/exam1?sslmode=disable"
-	DatabaseDSN := flag.String("d", dsn, "строка соединения c базой данных")
+	//dsn := "postgres://postgres:qwerty@localhost:5432/exam1?sslmode=disable"
+	DatabaseDSN := flag.String("d", "", "строка соединения c базой данных")
 
 	FlagDatabaseStr := flag.String("fd", "y", "хранить в базе данных")
 
