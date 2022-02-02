@@ -60,8 +60,13 @@ func createTablles(db *sql.DB) error {
 
 	return err
 }
-func GetFromDatabase(db *sql.DB, typemetric string, name string) (RowDB, bool) {
-	rows, err := db.Query("select name from metrics where typename = $1 && name=$2", typemetric, name)
+func GetFromDatabase(db *sql.DB, typename string, name string) (RowDB, bool) {
+	var qtext string
+	qtext = "select val as val from metrics where name = $1"
+	if typename == "counter" {
+		qtext = "select delta as val from metrics where name = $1"
+	}
+	rows, err := db.Query(qtext, name)
 	if err != nil {
 		log.Println("database error Select", err.Error())
 		return RowDB{}, false
@@ -70,14 +75,19 @@ func GetFromDatabase(db *sql.DB, typemetric string, name string) (RowDB, bool) {
 	defer rows.Close()
 
 	var r RowDB
+	r.MType = typename
+	r.Name = name
 	if rows.Next() {
-
-		if err := rows.Scan(&r); err != nil {
-			log.Println("database error Select scan", err.Error())
-			return RowDB{}, false
+		if typename == "counter" {
+			err = rows.Scan(&r.Delta)
+		} else {
+			err = rows.Scan(&r.Value)
+		}
+		if err == nil {
+			return r, true
 		}
 
-		return r, true
+		log.Println("database error Select scan", err.Error())
 	}
 
 	return RowDB{}, false
@@ -91,7 +101,7 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 	}
 	defer tx.Rollback()
 
-	rows, errSelect := db.Query("select name from metrics where typename = $1 name=$2", r.MType, r.Name)
+	rows, errSelect := db.Query("select name from metrics where name=$1", r.Name)
 	if errSelect != nil {
 		log.Println("database error Select", errSelect.Error())
 		return errSelect
@@ -101,9 +111,9 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 	if rows.Next() {
 		var err error
 		if r.MType == "gauge" {
-			_, err = tx.Exec("UPDATE metrics SET val = $1, WHERE name=$2", r.Value, r.Name)
+			_, err = tx.Exec("UPDATE metrics SET val = $1 WHERE name=$2", r.Value, r.Name)
 		} else {
-			_, err = tx.Exec("UPDATE metrics SET delta = $1, WHERE name=$2", r.Delta, r.Name)
+			_, err = tx.Exec("UPDATE metrics SET delta = $1 WHERE name=$2", r.Delta, r.Name)
 		}
 
 		if err != nil {
@@ -115,9 +125,10 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 
 		var err error
 		if r.MType == "gauge" {
-			_, err = tx.Exec("INSERT INTO metrics (typename, name, val) values($1, $2, $2)", r.MType, r.Name, r.Value)
+			//_, err = tx.Exec("INSERT INTO metrics (typename, name, val) values(@typename, @name, @val)", r.MType, r.Name, r.Value)
+			_, err = tx.Exec("INSERT INTO metrics (typename, name, val) values($1, $2, $3)", r.MType, r.Name, r.Value)
 		} else {
-			_, err = tx.Exec("INSERT INTO metrics (typename, name, delta) values($1, $2, $2)", r.MType, r.Name, r.Delta)
+			_, err = tx.Exec("INSERT INTO metrics (typename, name, delta) values($1, $2, $3)", r.MType, r.Name, r.Delta)
 		}
 
 		if err != nil {
@@ -152,9 +163,15 @@ func GetMapData(db *sql.DB, typename string) MapData {
 	var r RowDB
 	for rows.Next() {
 
-		if err := rows.Scan(&r); err != nil {
-			log.Println("database error Select scan", err.Error())
-			return MapData{}
+		if typename == "counter" {
+			err = rows.Scan(&r.Name, &r.Delta)
+			res.CounterData[r.Name] = r.Delta
+		} else {
+			err = rows.Scan(&r.Name, &r.Value)
+		}
+
+		if err != nil {
+			continue
 		}
 
 		if typename == "counter" {
@@ -162,6 +179,7 @@ func GetMapData(db *sql.DB, typename string) MapData {
 		} else {
 			res.GaugeData[r.Name] = r.Value
 		}
+
 	}
 
 	return res

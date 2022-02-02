@@ -13,7 +13,7 @@ import (
 )
 
 type Metric interface {
-	SaveGaugeVal(nameMetric string, value float64)
+	SaveGaugeVal(nameMetric string, value float64) error
 	GetGaugeVal(nameMetric string) (float64, bool)
 	SaveCounterVal(nameMetric string, value int64)
 	GetCounterVal(nameMetric string) (int64, bool)
@@ -151,11 +151,12 @@ func (m MapMetric) LoadFromFile() error {
 	return nil
 }
 
-func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) {
+func (m MapMetric) SaveGaugeVal(nameMetric string, value float64) error {
 	m.GaugeData[nameMetric] = value
 	if m.FlagSave {
-		m.SaveToFile()
+		return m.SaveToFile()
 	}
+	return nil
 }
 
 func (m MapMetric) GetGaugeVal(nameMetric string) (float64, bool) {

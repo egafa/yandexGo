@@ -103,9 +103,11 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 			}
 
 			if errConv == nil {
-				m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
-				log.Print(logtext + " Обработана метрика " + strBody)
+				errConv = m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
+			}
 
+			if errConv == nil {
+				log.Print(logtext + " Обработана метрика " + strBody)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 			}
 

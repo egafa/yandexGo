@@ -29,9 +29,9 @@ func (m MetricsDB) Close() error {
 	return m.DB.Close()
 }
 
-func (m MetricsDB) SaveGaugeVal(nameMetric string, value float64) {
+func (m MetricsDB) SaveGaugeVal(nameMetric string, value float64) error {
 	var i int64
-	storage.SaveToDatabase(m.DB, storage.NewRowDB("gauge", nameMetric, value, i))
+	return storage.SaveToDatabase(m.DB, storage.NewRowDB("gauge", nameMetric, value, i))
 }
 
 func (m MetricsDB) GetGaugeVal(nameMetric string) (float64, bool) {
