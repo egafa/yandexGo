@@ -101,7 +101,7 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 	}
 	defer tx.Rollback()
 
-	rows, errSelect := db.Query("select name from metrics where name=$1", r.Name)
+	rows, errSelect := db.Query("select name, delta from metrics where name=$1", r.Name)
 	if errSelect != nil {
 		log.Println("database error Select", errSelect.Error())
 		return errSelect
@@ -113,6 +113,14 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 		if r.MType == "gauge" {
 			_, err = tx.Exec("UPDATE metrics SET val = $1 WHERE name=$2", r.Value, r.Name)
 		} else {
+
+			var delta int64
+			err = rows.Scan(&r.Name, &delta)
+			if err != nil {
+				log.Println("database error SAVE SCAN ", err.Error())
+				return err
+			}
+			r.Delta = r.Delta + delta
 			_, err = tx.Exec("UPDATE metrics SET delta = $1 WHERE name=$2", r.Delta, r.Name)
 		}
 
