@@ -103,7 +103,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 			}
 
 			if errConv == nil {
-				errConv = m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
+				errConv = m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
 			}
 
 			if errConv == nil {
@@ -120,7 +120,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 				errConv = err
 			}
 			if errConv == nil {
-				m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
+				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
 				log.Print(logtext + " Обработана метрика " + strBody)
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
@@ -162,13 +162,13 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 			var ok bool
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
-				val, ok1 := m.GetGaugeVal(strings.ToLower(dataMetrics.ID))
+				val, ok1 := m.GetGaugeVal(dataMetrics.ID)
 				ok = ok1
 				if ok {
 					dataMetrics.Value = &val
 				}
 			case "counter":
-				val, ok1 := m.GetCounterVal(strings.ToLower(dataMetrics.ID))
+				val, ok1 := m.GetCounterVal(dataMetrics.ID)
 				ok = ok1
 				if ok {
 					dataMetrics.Delta = &val
@@ -205,14 +205,14 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 
 		switch strings.ToLower(typeMetric) {
 		case "gauge":
-			val, ok := m.GetGaugeVal(strings.ToLower(nameMetric))
+			val, ok := m.GetGaugeVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
 				return
 			}
 		case "counter":
-			val, ok := m.GetCounterVal(strings.ToLower(nameMetric))
+			val, ok := m.GetCounterVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
