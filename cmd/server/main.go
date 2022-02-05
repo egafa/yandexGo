@@ -25,6 +25,7 @@ func main() {
 	log.Println(" databse url ", cfg.DatabaseDSN)
 
 	mapMetric := model.NewMetric(cfg)
+	defer mapMetric.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 

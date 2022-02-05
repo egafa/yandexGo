@@ -79,9 +79,9 @@ func NewMetric(cfg *config.Config_Server) Metric {
 	//if cfg.FlagDatabase == "y" {
 	if len(cfg.DatabaseDSN) > 0 {
 		mapMetric, err = NewMetricDB(cfg)
-	}
-	if err == nil {
-		return mapMetric
+		if err == nil {
+			return mapMetric
+		}
 	}
 
 	return NewMapMetricCongig(cfg)

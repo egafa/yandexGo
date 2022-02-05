@@ -12,17 +12,16 @@ type MetricsDB struct {
 	DB *sql.DB
 }
 
-func NewMetricDB(cfg *config.Config_Server) MetricsDB {
+func NewMetricDB(cfg *config.Config_Server) (MetricsDB, error) {
 	m := MetricsDB{}
 
-	if len(cfg.DatabaseDSN) > 0 {
-		db := storage.NewDB(cfg.DatabaseDSN)
-		if db != nil {
-			m.DB = db
-		}
+	db, err := storage.NewDB(cfg.DatabaseDSN)
+	if err == nil {
+		m.DB = db
+		return m, nil
 	}
+	return m, err
 
-	return m
 }
 
 func (m MetricsDB) Close() error {

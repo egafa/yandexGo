@@ -36,20 +36,20 @@ func NewRowDB(mtype string, name string, value float64, delta int64) RowDB {
 
 }
 
-func NewDB(dsn string) *sql.DB {
+func NewDB(dsn string) (*sql.DB, error) {
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		log.Println("database error ", err.Error())
-		return nil
+		return nil, err
 	}
 
 	err = createTablles(db)
 	if err != nil {
 		log.Println("database error ", err.Error())
-		return nil
+		return nil, err
 	}
-	return db
+	return db, nil
 
 }
 
