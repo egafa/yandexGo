@@ -73,6 +73,21 @@ func GetHash(m Metrics, key string) string {
 	return res
 }
 
+func NewMetric(cfg *config.Config_Server) Metric {
+	var mapMetric Metric
+	var err error
+	//if cfg.FlagDatabase == "y" {
+	if len(cfg.DatabaseDSN) > 0 {
+		mapMetric, err = NewMetricDB(cfg)
+	}
+	if err == nil {
+		return mapMetric
+	}
+
+	return NewMapMetricCongig(cfg)
+
+}
+
 func NewMapMetric() MapMetric {
 	mapMetricVal := MapMetric{}
 	mapMetricVal.GaugeData = make(map[string]float64)

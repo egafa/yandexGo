@@ -24,14 +24,7 @@ func main() {
 	log.Println(" файл ", cfg.StoreFile, " интервал сохранения ", cfg.StoreInterval, "флаг восстановления", cfg.Restore, " Каталог шаблонов ", cfg.TemplateDir, " Key ", cfg.Key)
 	log.Println(" databse url ", cfg.DatabaseDSN)
 
-	var mapMetric model.Metric
-	//if cfg.FlagDatabase == "y" {
-	if len(cfg.DatabaseDSN) > 0 {
-		mapMetric = model.NewMetricDB(cfg)
-		defer mapMetric.Close()
-	} else {
-		mapMetric = model.NewMapMetricCongig(cfg)
-	}
+	mapMetric := model.NewMetric(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
