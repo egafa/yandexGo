@@ -17,6 +17,7 @@ type Metric interface {
 	GetGaugeVal(nameMetric string) (float64, bool)
 	SaveCounterVal(nameMetric string, value int64)
 	GetCounterVal(nameMetric string) (int64, bool)
+	SaveMassiveMetric([]Metrics) error
 	GetGaugetMetricTemplate() GaugeTemplateMetric
 	GetCounterMetricTemplate() CounterTemplateMetric
 	SaveToFile() error
@@ -206,6 +207,19 @@ func (m MapMetric) GetCounterVal(nameMetric string) (int64, bool) {
 	} else {
 		return 0, false
 	}
+}
+
+func (m MapMetric) SaveMassiveMetric(dataMetrics []Metrics) error {
+	var err error
+
+	for i := 0; i < len(dataMetrics); i++ {
+		if dataMetrics[i].MType == "gauge" {
+			err = m.SaveGaugeVal(dataMetrics[i].ID, *dataMetrics[i].Value)
+		} else {
+			m.SaveCounterVal(dataMetrics[i].ID, *dataMetrics[i].Delta)
+		}
+	}
+	return err
 }
 
 func (m MapMetric) GetGaugetMetricTemplate() GaugeTemplateMetric {

@@ -72,7 +72,7 @@ func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
-				sliceMetric := make([]dataRequest, len(keysMetric))
+				sliceMetric := make([]dataRequest, 1)
 
 				v := reflect.ValueOf(ms)
 
@@ -118,6 +118,7 @@ func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric
 
 				dataChannel <- sliceMetric
 				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
+
 			}
 		}
 	}
@@ -155,6 +156,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 				}
 
 				time.Sleep(time.Duration(cfg.ReportInterval) * time.Second)
+				//time.Sleep(600 * time.Second)
 			}
 		default:
 			//stopchanel <- 0
@@ -243,7 +245,8 @@ func main() {
 
 	dataChannel := make(chan []dataRequest) //, len(namesMetric))
 
-	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	//go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
 	time.Sleep(1 * time.Second)
 
@@ -271,6 +274,9 @@ func namesMetric() (map[string]string, []string) {
 	namesMetric := make(map[string]string)
 
 	for i := 0; i < v.NumField(); i++ {
+		if i == 1 {
+			break
+		}
 		typeNаme := reflect.TypeOf(v.Field(i).Interface()).String()
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {

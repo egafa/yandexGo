@@ -16,7 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func bodyData(r *http.Request) (model.Metrics, []byte, error) {
+func bodyData(r *http.Request, isList bool) ([]byte, error, model.Metrics, []model.Metrics) {
 	var body []byte
 	var bodyErr error
 
@@ -29,16 +29,27 @@ func bodyData(r *http.Request) (model.Metrics, []byte, error) {
 
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
-		return model.Metrics{}, nil, bodyErr
+		return nil, bodyErr, model.Metrics{}, nil
 	}
 
+	var massiveMetrics []model.Metrics
 	dataMetrics := model.Metrics{}
-	jsonErr := json.Unmarshal(body, &dataMetrics)
-	if jsonErr != nil {
-		return model.Metrics{}, nil, jsonErr
+
+	if isList {
+		bodyErr = json.Unmarshal(body, &massiveMetrics)
+	} else {
+		bodyErr = json.Unmarshal(body, &dataMetrics)
 	}
 
-	return dataMetrics, body, nil
+	if bodyErr != nil {
+		return nil, bodyErr, model.Metrics{}, nil
+	}
+
+	if isList {
+		return body, nil, model.Metrics{}, massiveMetrics
+	} else {
+		return body, nil, dataMetrics, nil
+	}
 }
 
 func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
@@ -55,25 +66,37 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		dataMetrics1, body, jsonErr := bodyData(r)
+		body, err, _, dataMetrics := bodyData(r, true)
 
-		if jsonErr != nil {
+		if err != nil {
 			http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
-			log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
+			log.Print(logtext + " Ошибка дессериализации " + err.Error() + string(body))
 			return
 		}
 
-		h := model.GetHash(dataMetrics1, cfg.Key)
-		if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
-			http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
-			log.Print(logtext + " Хэш ключа не совпал " + string(body))
+		for i := 0; i < len(dataMetrics); i++ {
+			h := model.GetHash(dataMetrics[i], cfg.Key)
+			if len(cfg.Key) > 0 && dataMetrics[i].Hash != h {
+				errText := fmt.Sprintf(" Хэш ключа не совпал %v", dataMetrics[i])
+				err = fmt.Errorf(errText)
+				http.Error(w, errText, http.StatusNotImplemented)
+				log.Print(logtext + errText)
+			}
+		}
+		if err != nil {
 			return
-
 		}
 
-		//m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
-		//log.Print(logtext + " Обработана метрика " + strBody)
-		//w.WriteHeader(http.StatusOK)
+		err = m.SaveMassiveMetric(dataMetrics)
+
+		if err != nil {
+			http.Error(w, "Ошибка записи массива метрик", http.StatusNotImplemented)
+			log.Print(logtext + " Ошибка записи массива метрик " + err.Error() + string(body))
+			return
+		}
+
+		log.Print(logtext + " Обработан массив метрик " + string(body))
+		w.WriteHeader(http.StatusOK)
 		//w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 	}
 }
@@ -96,7 +119,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 			log.Println(logtext)
 
-			dataMetrics1, body, jsonErr := bodyData(r)
+			body, jsonErr, dataMetrics1, _ := bodyData(r, false)
 
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
@@ -189,7 +212,7 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
-			dataMetrics, body, jsonErr := bodyData(r)
+			body, jsonErr, dataMetrics, _ := bodyData(r, false)
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации" + string(body))

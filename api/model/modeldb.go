@@ -51,6 +51,26 @@ func (m MetricsDB) GetCounterVal(nameMetric string) (int64, bool) {
 	return r.Delta, ok
 }
 
+func (m MetricsDB) SaveMassiveMetric(dataMetrics []Metrics) error {
+
+	var massiveDB []storage.RowDB
+
+	for i := 0; i < len(dataMetrics); i++ {
+		r := storage.RowDB{}
+		r.Name = dataMetrics[i].ID
+		r.MType = dataMetrics[i].MType
+		if r.MType == "gauge" {
+			r.Value = *dataMetrics[i].Value
+		} else {
+			r.Delta = *dataMetrics[i].Delta
+		}
+
+		massiveDB = append(massiveDB, r)
+	}
+
+	return storage.SaveMassiveDatabase(m.DB, massiveDB)
+}
+
 func (m MetricsDB) GetGaugetMetricTemplate() GaugeTemplateMetric {
 
 	r := storage.GetMapData(m.DB, "gauge")

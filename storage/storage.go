@@ -192,3 +192,64 @@ func GetMapData(db *sql.DB, typename string) MapData {
 
 	return res
 }
+
+func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmtInsert, err := tx.Prepare("INSERT INTO metrics (typename, name, val, delta) values($1,$2,$3,$4)")
+	if err != nil {
+		return err
+	}
+
+	stmtUpdateCounter, err := tx.Prepare("UPDATE metrics SET delta = $1 WHERE name=$2")
+	if err != nil {
+		return err
+	}
+
+	stmtUpdateGauge, err := tx.Prepare("UPDATE metrics SET val = $1 WHERE name=$2")
+	if err != nil {
+		return err
+	}
+
+	stmSelect, err := db.Prepare("select name, delta from metrics where name=$1")
+
+	for _, v := range rows {
+
+		row := stmSelect.QueryRow(v.Name)
+
+		var delta int64
+
+		flagRecord := false
+		if err := row.Scan(delta); err != sql.ErrNoRows {
+			flagRecord = true
+		}
+
+		if flagRecord {
+
+			if v.MType == "gauge" {
+				_, err = stmtUpdateGauge.Exec(v.Value, v.Name)
+			} else {
+				_, err = stmtUpdateCounter.Exec(delta+v.Delta, v.Name)
+			}
+
+		} else {
+
+			if v.MType == "gauge" {
+
+				_, err = stmtInsert.Exec(v.MType, v.Name, v.Value, nil)
+			} else {
+
+				_, err = stmtInsert.Exec(v.MType, v.Name, nil, v.Delta)
+			}
+
+		}
+	}
+
+	return tx.Commit()
+
+}
