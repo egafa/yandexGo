@@ -45,104 +45,37 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logtext string
 
-		var dataMetrics model.Metrics
-		var strBody string
-		var valueMetric string
-
-		
 		logtext = "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
-		
+
 		log.Println(logtext)
 
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "Content-Type должен быть json", http.StatusNotImplemented)
 			log.Print(logtext + " Content-Type должен быть json ")
 			return
-		}	
-			
-		
-			
-
-			dataMetrics1, body, jsonErr := bodyData(r)
-
-			if jsonErr != nil {
-				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
-				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
-				return
-			}
-
-			h := model.GetHash(dataMetrics1, cfg.Key)
-			if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
-				http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
-				log.Print(logtext + " Хэш ключа не совпал " + string(body))
-				return
-
-			}
-
-			dataMetrics = dataMetrics1
-			strBody = string(body)
-
-		} else {
-
-			logtext = logtext + " ******* "
-			log.Println(logtext)
-
-			dataMetrics.ID = chi.URLParam(r, "nammeMetric")
-			dataMetrics.MType = chi.URLParam(r, "typeMetric")
-			valueMetric = chi.URLParam(r, "valueMetric")
-
 		}
 
-		var errConv error
+		dataMetrics1, body, jsonErr := bodyData(r)
 
-		switch strings.ToLower(dataMetrics.MType) {
-		case "gauge":
-			if !jsonFlag {
-
-				val, err := strconv.ParseFloat(valueMetric, 64)
-				if err == nil {
-					dataMetrics.Value = &val
-				}
-				errConv = err
-			}
-
-			if errConv == nil {
-				errConv = m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
-			}
-
-			if errConv == nil {
-				log.Print(logtext + " Обработана метрика " + strBody)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
-			}
-
-		case "counter":
-			if !jsonFlag {
-				val, err := strconv.ParseInt(valueMetric, 10, 64)
-				if err == nil {
-					dataMetrics.Delta = &val
-				}
-				errConv = err
-			}
-			if errConv == nil {
-				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
-				log.Print(logtext + " Обработана метрика " + strBody)
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
-			}
-		default:
-			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
-			log.Print(logtext + " Не определен тип метрики ")
+		if jsonErr != nil {
+			http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
+			log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 			return
 		}
 
-		if errConv != nil {
-			http.Error(w, "Ошибка конвертации значения ", http.StatusBadRequest)
-			log.Print(logtext + " Ошибка конвертации значения  ")
+		h := model.GetHash(dataMetrics1, cfg.Key)
+		if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
+			http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
+			log.Print(logtext + " Хэш ключа не совпал " + string(body))
 			return
+
 		}
 
+		//m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
+		//log.Print(logtext + " Обработана метрика " + strBody)
+		//w.WriteHeader(http.StatusOK)
+		//w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 	}
-
 }
 
 func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {

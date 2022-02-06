@@ -57,7 +57,7 @@ func newRequest(m interface{}, addr, method string, compress bool) (dataRequest,
 	return r, nil
 }
 
-func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
@@ -164,6 +164,95 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 	}
 
+}
+
+func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+
+	urlUpdate := "http://%s/update/%s/%s/%v"
+
+	for { //i := 0; i < 60; i++
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			{
+
+				ms := runtime.MemStats{}
+				runtime.ReadMemStats(&ms)
+
+				sliceMetric := make([]dataRequest, len(keysMetric))
+
+				m := model.Metrics{}
+				m.ID = "PollCount"
+				m.MType = "counter"
+				delta := int64(1)
+				m.Delta = &delta
+				m.Hash = model.GetHash(m, cfg.Key)
+
+				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost, cfg.Compress)
+				if err == nil {
+					sliceMetric[0] = req
+				}
+
+				m = model.Metrics{}
+				m.ID = "RandomValue"
+				m.MType = "gauge"
+				mValue := rand.Float64()
+				m.Value = &mValue
+				m.Hash = model.GetHash(m, cfg.Key)
+
+				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost, cfg.Compress)
+				if err == nil {
+					sliceMetric[1] = req
+				}
+
+				v := reflect.ValueOf(ms)
+
+				for i := 0; i < len(keysMetric); i++ {
+
+					val := v.FieldByName(keysMetric[i]).Interface()
+					typeNаme := namesMetric[keysMetric[i]]
+					m := model.Metrics{}
+					m.ID = keysMetric[i]
+					m.MType = typeNаme
+
+					var addr string
+					switch m.ID {
+					case "PollCount":
+						delta := int64(1)
+						m.Delta = &delta
+						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta)
+					case "RandomValue":
+						mValue := rand.Float64()
+						m.Value = &mValue
+						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue)
+					default:
+						if typeNаme == "gauge" {
+							f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
+							m.Value = &f
+							addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, f)
+						} else {
+							i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
+							m.Delta = &i
+							addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, i)
+						}
+					}
+					m.Hash = model.GetHash(m, cfg.Key)
+
+					req, err := newRequest(m, addr, http.MethodPost, cfg.Compress)
+					if err == nil {
+						sliceMetric[i+2] = req
+						//log.Println("Добавление запроса ", req.addr)
+					}
+
+				}
+
+				dataChannel <- sliceMetric
+				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
+			}
+		}
+	}
 }
 
 func main() {
