@@ -216,16 +216,16 @@ func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
 		return err
 	}
 
-	stmSelect, err := tx.Prepare("select name, delta from metrics where name=$1")
+	stmSelect, err := tx.Prepare("select delta from metrics where name=$1 and typename=$2")
 
 	for _, v := range rows {
 
-		row := stmSelect.QueryRow(v.Name)
+		row := stmSelect.QueryRow(v.Name, "counter")
 
 		var delta int64
 
 		flagRecord := false
-		if err = row.Scan(delta); err != sql.ErrNoRows {
+		if err = row.Scan(&delta); err != sql.ErrNoRows {
 			flagRecord = true
 		}
 
