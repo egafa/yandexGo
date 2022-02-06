@@ -62,9 +62,9 @@ func createTablles(db *sql.DB) error {
 }
 func GetFromDatabase(db *sql.DB, typename string, name string) (RowDB, bool) {
 	var qtext string
-	qtext = "select val as val from metrics where name = $1"
+	qtext = "select val from metrics where name = $1"
 	if typename == "counter" {
-		qtext = "select delta as val from metrics where name = $1"
+		qtext = "select delta from metrics where name = $1"
 	}
 	rows, err := db.Query(qtext, name)
 	if err != nil {
