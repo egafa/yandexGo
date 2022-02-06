@@ -68,6 +68,8 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 
 		body, err, _, dataMetrics := bodyData(r, true)
 
+		log.Print(" Получен массив  ", dataMetrics)
+
 		if err != nil {
 			http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 			log.Print(logtext + " Ошибка дессериализации " + err.Error() + string(body))
