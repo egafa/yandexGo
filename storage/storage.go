@@ -225,7 +225,7 @@ func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
 		var delta int64
 
 		flagRecord := false
-		if err := row.Scan(delta); err != sql.ErrNoRows {
+		if err = row.Scan(delta); err != sql.ErrNoRows {
 			flagRecord = true
 		}
 

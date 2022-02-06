@@ -274,9 +274,9 @@ func namesMetric() (map[string]string, []string) {
 	namesMetric := make(map[string]string)
 
 	for i := 0; i < v.NumField(); i++ {
-		if i == 1 {
-			break
-		}
+		//if i == 1 {
+		//	break
+		//}
 		typeNаme := reflect.TypeOf(v.Field(i).Interface()).String()
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
