@@ -216,7 +216,7 @@ func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
 		return err
 	}
 
-	stmSelect, err := db.Prepare("select name, delta from metrics where name=$1")
+	stmSelect, err := tx.Prepare("select name, delta from metrics where name=$1")
 
 	for _, v := range rows {
 

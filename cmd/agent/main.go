@@ -274,11 +274,12 @@ func namesMetric() (map[string]string, []string) {
 
 	namesMetric["PollCount"] = "counter"
 	namesMetric["RandomValue"] = "gauge"
+	//namesMetric["CounterBatchZip119"] = "counter"
 
 	for i := 0; i < v.NumField(); i++ {
-		//if i == 1 {
-		//	break
-		//}
+		if i == 1 {
+			break
+		}
 		typeNаme := reflect.TypeOf(v.Field(i).Interface()).String()
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
