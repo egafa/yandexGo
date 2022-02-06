@@ -74,32 +74,9 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 
 				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2.
 
-				m := model.Metrics{}
-				m.ID = "PollCount"
-				m.MType = "counter"
-				delta := int64(1)
-				m.Delta = &delta
-				m.Hash = model.GetHash(m, cfg.Key)
-
-				req, err := newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, delta), http.MethodPost, cfg.Compress)
-				if err == nil {
-					sliceMetric[0] = req
-				}
-
-				m = model.Metrics{}
-				m.ID = "RandomValue"
-				m.MType = "gauge"
-				mValue := rand.Float64()
-				m.Value = &mValue
-				m.Hash = model.GetHash(m, cfg.Key)
-
-				req, err = newRequest(m, fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, mValue), http.MethodPost, cfg.Compress)
-				if err == nil {
-					sliceMetric[1] = req
-				}
-
 				v := reflect.ValueOf(ms)
 
+				var massiveMetrics []model.Metrics
 				for i := 0; i < len(keysMetric); i++ {
 
 					val := v.FieldByName(keysMetric[i]).Interface()
@@ -109,23 +86,35 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 					m.MType = typeNаme
 
 					var addr string
-					if typeNаme == "gauge" {
-						f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
-						m.Value = &f
-						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, f)
-					} else {
-						i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
-						m.Delta = &i
-						addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, i)
+					switch m.ID {
+					case "PollCount":
+						delta := int64(1)
+						m.Delta = &delta
+					case "RandomValue":
+						mValue := rand.Float64()
+						m.Value = &mValue
+					default:
+
+						if typeNаme == "gauge" {
+							f, _ := strconv.ParseFloat(fmt.Sprintf("%v", val), 64)
+							m.Value = &f
+							addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, f)
+						} else {
+							i, _ := strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
+							m.Delta = &i
+							addr = fmt.Sprintf(urlUpdate, cfg.AddrServer, m.MType, m.ID, i)
+						}
+
 					}
 					m.Hash = model.GetHash(m, cfg.Key)
+					massiveMetrics = append(massiveMetrics, m)
 
-					req, err := newRequest(m, addr, http.MethodPost, cfg.Compress)
-					if err == nil {
-						sliceMetric[i+2] = req
-						//log.Println("Добавление запроса ", req.addr)
-					}
+				}
 
+				req, err := newRequest(massiveMetrics, addr, http.MethodPost, cfg.Compress)
+				if err == nil {
+					sliceMetric[i+2] = req
+					//log.Println("Добавление запроса ", req.addr)
 				}
 
 				dataChannel <- sliceMetric
@@ -231,6 +220,9 @@ func namesMetric() (map[string]string, []string) {
 		}
 
 	}
+
+	namesMetric["PollCount"] = "counter"
+	namesMetric["RandomValue"] = "gauge"
 
 	keys := make([]string, 0, len(namesMetric))
 	for k := range namesMetric {
