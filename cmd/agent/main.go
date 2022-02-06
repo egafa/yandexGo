@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"reflect"
 	"runtime"
-	"sort"
 	"strconv"
 	"syscall"
 	"time"
@@ -273,6 +272,9 @@ func namesMetric() (map[string]string, []string) {
 
 	namesMetric := make(map[string]string)
 
+	namesMetric["PollCount"] = "counter"
+	namesMetric["RandomValue"] = "gauge"
+
 	for i := 0; i < v.NumField(); i++ {
 		//if i == 1 {
 		//	break
@@ -292,14 +294,11 @@ func namesMetric() (map[string]string, []string) {
 
 	}
 
-	namesMetric["PollCount"] = "counter"
-	namesMetric["RandomValue"] = "gauge"
-
 	keys := make([]string, 0, len(namesMetric))
 	for k := range namesMetric {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	//sort.Strings(keys)
 
 	return namesMetric, keys
 }
