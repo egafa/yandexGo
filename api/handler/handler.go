@@ -96,7 +96,7 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		//log.Print(logtext + " Обработан массив метрик " + string(body))
+		log.Print(logtext + " Обработан массив метрик " + string(body))
 		w.WriteHeader(http.StatusOK)
 		//w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 	}

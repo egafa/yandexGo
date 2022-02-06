@@ -151,7 +151,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 					_, err := client.Do(req)
 					if err == nil {
-						log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
+						//log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
 					}
 				}
 
