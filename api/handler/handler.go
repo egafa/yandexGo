@@ -79,7 +79,7 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			if len(cfg.Key) > 0 && dataMetrics[i].Hash != h {
 				errText := fmt.Sprintf(" Хэш ключа не совпал %v", dataMetrics[i])
 				err = fmt.Errorf(errText)
-				http.Error(w, errText, http.StatusNotImplemented)
+				http.Error(w, errText, http.StatusBadRequest)
 				log.Print(logtext + errText)
 			}
 		}
