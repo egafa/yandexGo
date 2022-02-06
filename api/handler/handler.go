@@ -96,7 +96,7 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		log.Print(logtext + " Обработан массив метрик " + string(body))
+		//log.Print(logtext + " Обработан массив метрик " + string(body))
 		w.WriteHeader(http.StatusOK)
 		//w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 	}
@@ -130,7 +130,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 			h := model.GetHash(dataMetrics1, cfg.Key)
 			if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
-				http.Error(w, "Хэш ключа не совпал", http.StatusNotImplemented)
+				http.Error(w, "Хэш ключа не совпал", http.StatusBadRequest)
 				log.Print(logtext + " Хэш ключа не совпал " + string(body))
 				return
 
