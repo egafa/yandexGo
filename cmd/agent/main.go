@@ -244,8 +244,8 @@ func main() {
 
 	dataChannel := make(chan []dataRequest) //, len(namesMetric))
 
-	//go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
-	go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	//go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 
 	time.Sleep(1 * time.Second)
 
