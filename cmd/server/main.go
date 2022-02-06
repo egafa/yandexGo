@@ -49,7 +49,7 @@ func main() {
 		r.Post("/", handler.UpdateMetricHandlerChi(mapMetric, cfg))
 	})
 
-	r.Route("/update", func(r chi.Router) {
+	r.Route("/updates", func(r chi.Router) {
 		r.Post("/", handler.UpdateListMetricHandlerChi(mapMetric, cfg))
 	})
 
