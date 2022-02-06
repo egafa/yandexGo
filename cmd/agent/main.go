@@ -72,7 +72,7 @@ func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[st
 				ms := runtime.MemStats{}
 				runtime.ReadMemStats(&ms)
 
-				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2. Почему код хрупкий?
+				sliceMetric := make([]dataRequest, len(keysMetric)+2) //Оставил пока +2.
 
 				m := model.Metrics{}
 				m.ID = "PollCount"
@@ -221,9 +221,9 @@ func namesMetric() (map[string]string, []string) {
 		strNаme := typeOfS.Field(i).Name
 		switch typeNаme {
 		case "uint64":
-			namesMetric[strNаme] = "gauge" //"counter"
+			namesMetric[strNаme] = "gauge"
 		case "uint32":
-			namesMetric[strNаme] = "gauge" //"counter"
+			namesMetric[strNаme] = "gauge"
 		case "float64":
 			namesMetric[strNаme] = "gauge"
 		default:
