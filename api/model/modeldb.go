@@ -53,19 +53,47 @@ func (m MetricsDB) GetCounterVal(nameMetric string) (int64, bool) {
 
 func (m MetricsDB) SaveMassiveMetric(dataMetrics []Metrics) error {
 
-	var massiveDB []storage.RowDB
+	/*
+		var massiveDB []storage.RowDB
 
-	for i := 0; i < len(dataMetrics); i++ {
-		r := storage.RowDB{}
-		r.Name = dataMetrics[i].ID
-		r.MType = dataMetrics[i].MType
-		if r.MType == "gauge" {
-			r.Value = *dataMetrics[i].Value
+		for i := 0; i < len(dataMetrics); i++ {
+			r := storage.RowDB{}
+			r.Name = dataMetrics[i].ID
+			r.MType = dataMetrics[i].MType
+			if r.MType == "gauge" {
+				r.Value = *dataMetrics[i].Value
+			} else {
+				r.Delta = *dataMetrics[i].Delta
+			}
+
+			massiveDB = append(massiveDB, r)
+		}
+	*/
+
+	massiveDB := make([]storage.RowDB, len(dataMetrics))
+	for i, metric := range dataMetrics {
+
+		if metric.MType == "gauge" {
+			if metric.Value == nil {
+				continue
+			}
 		} else {
-			r.Delta = *dataMetrics[i].Delta
+			if metric.Delta == nil {
+				continue
+			}
 		}
 
-		massiveDB = append(massiveDB, r)
+		r := storage.RowDB{
+			Name:  metric.ID,
+			MType: metric.MType,
+		}
+		if r.MType == "gauge" {
+
+			r.Value = *metric.Value
+		} else {
+			r.Delta = *metric.Delta
+		}
+		massiveDB[i] = r
 	}
 
 	return storage.SaveMassiveDatabase(m.DB, massiveDB)

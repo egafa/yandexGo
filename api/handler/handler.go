@@ -76,18 +76,14 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		errHash := false
 		for i := 0; i < len(dataMetrics); i++ {
 			h := model.GetHash(dataMetrics[i], cfg.Key)
 			if len(cfg.Key) > 0 && dataMetrics[i].Hash != h {
 				errText := fmt.Sprintf(" Хэш ключа не совпал %v", dataMetrics[i])
 				http.Error(w, errText, http.StatusBadRequest)
 				log.Print(logtext + errText)
-				errHash = true
+				return
 			}
-		}
-		if errHash {
-			return
 		}
 
 		err = m.SaveMassiveMetric(dataMetrics)

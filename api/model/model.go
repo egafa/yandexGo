@@ -77,7 +77,7 @@ func GetHash(m Metrics, key string) string {
 func NewMetric(cfg *config.Config_Server) Metric {
 	var mapMetric Metric
 	var err error
-	//if cfg.FlagDatabase == "y" {
+
 	if len(cfg.DatabaseDSN) > 0 {
 		mapMetric, err = NewMetricDB(cfg)
 		if err == nil {
