@@ -16,7 +16,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func bodyData(r *http.Request, isList bool) ([]byte, error, model.Metrics, []model.Metrics) {
+func bodyData(r *http.Request, isList bool) ([]byte, model.Metrics, []model.Metrics, error) {
 	var body []byte
 	var bodyErr error
 
@@ -29,7 +29,7 @@ func bodyData(r *http.Request, isList bool) ([]byte, error, model.Metrics, []mod
 
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
-		return nil, bodyErr, model.Metrics{}, nil
+		return nil, model.Metrics{}, nil, bodyErr
 	}
 
 	var massiveMetrics []model.Metrics
@@ -42,13 +42,13 @@ func bodyData(r *http.Request, isList bool) ([]byte, error, model.Metrics, []mod
 	}
 
 	if bodyErr != nil {
-		return nil, bodyErr, model.Metrics{}, nil
+		return nil, model.Metrics{}, nil, bodyErr
 	}
 
 	if isList {
-		return body, nil, model.Metrics{}, massiveMetrics
+		return body, model.Metrics{}, massiveMetrics, nil
 	} else {
-		return body, nil, dataMetrics, nil
+		return body, dataMetrics, nil, nil
 	}
 }
 
@@ -66,7 +66,7 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		body, err, _, dataMetrics := bodyData(r, true)
+		body, _, dataMetrics, err := bodyData(r, true)
 
 		log.Print(" Получен массив  ", dataMetrics)
 
@@ -117,7 +117,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 			log.Println(logtext)
 
-			body, jsonErr, dataMetrics1, _ := bodyData(r, false)
+			body, dataMetrics1, _, jsonErr := bodyData(r, false)
 
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
@@ -210,7 +210,7 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
-			body, jsonErr, dataMetrics, _ := bodyData(r, false)
+			body, dataMetrics, _, jsonErr := bodyData(r, false)
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации" + string(body))

@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/egafa/yandexGo/config"
 	"github.com/egafa/yandexGo/storage"
@@ -53,33 +54,16 @@ func (m MetricsDB) GetCounterVal(nameMetric string) (int64, bool) {
 
 func (m MetricsDB) SaveMassiveMetric(dataMetrics []Metrics) error {
 
-	/*
-		var massiveDB []storage.RowDB
-
-		for i := 0; i < len(dataMetrics); i++ {
-			r := storage.RowDB{}
-			r.Name = dataMetrics[i].ID
-			r.MType = dataMetrics[i].MType
-			if r.MType == "gauge" {
-				r.Value = *dataMetrics[i].Value
-			} else {
-				r.Delta = *dataMetrics[i].Delta
-			}
-
-			massiveDB = append(massiveDB, r)
-		}
-	*/
-
 	massiveDB := make([]storage.RowDB, len(dataMetrics))
 	for i, metric := range dataMetrics {
 
 		if metric.MType == "gauge" {
 			if metric.Value == nil {
-				continue
+				return fmt.Errorf("Для  ID ", metric.ID, "не задано значение")
 			}
 		} else {
 			if metric.Delta == nil {
-				continue
+				return fmt.Errorf("Для  ID ", metric.ID, "не задано значение")
 			}
 		}
 
