@@ -58,7 +58,7 @@ func LoadConfigAgent() *Config_Agent {
 		ReportInterval: int(ReportInterval.Seconds()),
 		Timeout:        1,
 		Key:            *KeyStr,
-		Compress:       true,
+		Compress:       false,
 	}
 }
 
