@@ -11,27 +11,97 @@ import (
 	"strings"
 
 	"github.com/egafa/yandexGo/api/model"
+	"github.com/egafa/yandexGo/config"
 	"github.com/go-chi/chi/v5"
 )
 
-func bodyData(r *http.Request) (model.Metrics, error, []byte) {
-	body, bodyErr := ioutil.ReadAll(r.Body)
+func bodyData(r *http.Request) ([]byte, error) {
 
+	defer r.Body.Close()
+
+	body, bodyErr := ioutil.ReadAll(r.Body)
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
-		return model.Metrics{}, bodyErr, nil
+		return nil, bodyErr
 	}
 
-	dataMetrics := model.Metrics{}
-	jsonErr := json.Unmarshal(body, &dataMetrics)
-	if jsonErr != nil {
-		return model.Metrics{}, jsonErr, nil
-	}
-
-	return dataMetrics, nil, body
+	return body, nil
 }
 
-func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
+func bodyMetric(r *http.Request) (model.Metrics, []byte, error) {
+
+	body, err := bodyData(r)
+	if err != nil {
+		return model.Metrics{}, nil, err
+	}
+
+	var dataMetrics model.Metrics
+	err = json.Unmarshal(body, &dataMetrics)
+
+	if err != nil {
+		return model.Metrics{}, body, err
+	}
+
+	return dataMetrics, body, nil
+
+}
+
+func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var logtext string
+
+		logtext = "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
+
+		log.Println(logtext)
+
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "Content-Type должен быть json", http.StatusNotImplemented)
+			log.Print(logtext + " Content-Type должен быть json ")
+			return
+		}
+
+		body, err := bodyData(r)
+		if err != nil {
+			http.Error(w, "Content-Type должен быть json", http.StatusNotImplemented)
+			log.Print(logtext + " Content-Type должен быть json ")
+			return
+		}
+
+		var dataMetrics []model.Metrics
+		err = json.Unmarshal(body, &dataMetrics)
+
+		if err != nil {
+			http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
+			log.Print(logtext + " Ошибка дессериализации " + err.Error() + string(body))
+			return
+		}
+
+		log.Print(" Получен массив  ", dataMetrics)
+
+		for i := 0; i < len(dataMetrics); i++ {
+			h := model.GetHash(dataMetrics[i], cfg.Key)
+			if len(cfg.Key) > 0 && dataMetrics[i].Hash != h {
+				errText := fmt.Sprintf(" Хэш ключа не совпал %v", dataMetrics[i])
+				http.Error(w, errText, http.StatusBadRequest)
+				log.Print(logtext + errText)
+				return
+			}
+		}
+
+		err = m.SaveMassiveMetric(dataMetrics)
+
+		if err != nil {
+			http.Error(w, "Ошибка записи массива метрик", http.StatusNotImplemented)
+			log.Print(logtext + " Ошибка записи массива метрик " + err.Error() + string(body))
+			return
+		}
+
+		log.Print(logtext + " Обработан массив метрик " + string(body))
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logtext string
 
@@ -41,20 +111,28 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 		var valueMetric string
 
 		jsonFlag = false
-		logtext = "***************************** handler update Json " + r.URL.String()
+		logtext = "******* handler update " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
 
 		if r.Header.Get("Content-Type") == "application/json" {
+			logtext = logtext + " ******* JSON"
 			jsonFlag = true
 
 			log.Println(logtext)
 
-			dataMetrics1, jsonErr, body := bodyData(r)
+			dataMetrics1, body, jsonErr := bodyMetric(r)
 
 			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации " + jsonErr.Error() + string(body))
 				return
+			}
+
+			h := model.GetHash(dataMetrics1, cfg.Key)
+			if len(cfg.Key) > 0 && dataMetrics1.Hash != h {
+				http.Error(w, "Хэш ключа не совпал", http.StatusBadRequest)
+				log.Print(logtext + " Хэш ключа не совпал " + string(body))
+				return
+
 			}
 
 			dataMetrics = dataMetrics1
@@ -62,7 +140,7 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		} else {
 
-			logtext = " ****************************** handler update plain " + r.URL.String()
+			logtext = logtext + " ******* "
 			log.Println(logtext)
 
 			dataMetrics.ID = chi.URLParam(r, "nammeMetric")
@@ -85,9 +163,11 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 
 			if errConv == nil {
-				m.SaveGaugeVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Value)
-				log.Print(logtext + " Обработана метрика " + strBody)
+				errConv = m.SaveGaugeVal(dataMetrics.ID, *dataMetrics.Value)
+			}
 
+			if errConv == nil {
+				log.Print(logtext + " Обработана метрика " + strBody)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Value)))
 			}
 
@@ -100,20 +180,18 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				errConv = err
 			}
 			if errConv == nil {
-				m.SaveCounterVal(strings.ToLower(dataMetrics.ID), *dataMetrics.Delta)
+				m.SaveCounterVal(dataMetrics.ID, *dataMetrics.Delta)
 				log.Print(logtext + " Обработана метрика " + strBody)
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", *dataMetrics.Delta)))
 			}
 		default:
-			//w.WriteHeader(http.StatusNotImplemented)
 			http.Error(w, "Не определен тип метрики", http.StatusNotImplemented)
 			log.Print(logtext + " Не определен тип метрики ")
 			return
 		}
 
 		if errConv != nil {
-			//w.WriteHeader(http.StatusBadRequest)
 			http.Error(w, "Ошибка конвертации значения ", http.StatusBadRequest)
 			log.Print(logtext + " Ошибка конвертации значения  ")
 			return
@@ -123,18 +201,19 @@ func UpdateMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 }
 
-func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
+func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var logtext string
 
+		logtext = "******* Value " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
+
 		if r.Method == http.MethodPost && r.Header.Get("Content-Type") == "application/json" {
-			logtext = "*************** handler value Json " + r.URL.String()
+			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
-			dataMetrics, jsonErr, body := bodyData(r)
+			dataMetrics, body, jsonErr := bodyMetric(r)
 			if jsonErr != nil {
-				w.WriteHeader(http.StatusNotImplemented)
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации" + string(body))
 				return
@@ -143,26 +222,26 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			var ok bool
 			switch strings.ToLower(dataMetrics.MType) {
 			case "gauge":
-				val, ok1 := m.GetGaugeVal(strings.ToLower(dataMetrics.ID))
+				val, ok1 := m.GetGaugeVal(dataMetrics.ID)
 				ok = ok1
 				if ok {
 					dataMetrics.Value = &val
 				}
 			case "counter":
-				val, ok1 := m.GetCounterVal(strings.ToLower(dataMetrics.ID))
+				val, ok1 := m.GetCounterVal(dataMetrics.ID)
 				ok = ok1
 				if ok {
 					dataMetrics.Delta = &val
 				}
 
 			default:
-				//w.WriteHeader(http.StatusNotFound)
 				http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 				log.Print(logtext + " Не найдена метрика " + string(body))
 				return
 			}
 
 			if ok {
+				dataMetrics.Hash = model.GetHash(dataMetrics, cfg.Key)
 				byt, err := json.Marshal(dataMetrics)
 				if err == nil {
 					w.Header().Set("Content-Type", "application/json")
@@ -173,13 +252,12 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 				}
 			}
 
-			//w.WriteHeader(http.StatusNotFound)
 			http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 			log.Print(logtext + " Не определен тип метрики" + string(body))
 			return
 		}
 
-		logtext = "*************** handler value plain " + r.URL.String()
+		logtext = logtext + " ******* "
 		log.Println(logtext)
 
 		typeMetric := chi.URLParam(r, "typeMetric")
@@ -187,14 +265,14 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 
 		switch strings.ToLower(typeMetric) {
 		case "gauge":
-			val, ok := m.GetGaugeVal(strings.ToLower(nameMetric))
+			val, ok := m.GetGaugeVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
 				return
 			}
 		case "counter":
-			val, ok := m.GetCounterVal(strings.ToLower(nameMetric))
+			val, ok := m.GetCounterVal(nameMetric)
 			if ok {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(fmt.Sprintf("%v", val)))
@@ -202,28 +280,34 @@ func ValueMetricHandlerChi(m model.Metric) http.HandlerFunc {
 			}
 		}
 
-		//w.WriteHeader(http.StatusBadRequest)
 		http.Error(w, "Не определен тип метрики", http.StatusNotFound)
 		log.Print(logtext + " Не определен тип метрики " + typeMetric + "  " + nameMetric)
 
 	}
 }
 
-func ListMetricsChiHandleFunc(m model.Metric) http.HandlerFunc {
+func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		logtext := "*******  List Metric " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding") + " Accept-Encoding " + r.Header.Get("Accept-Encoding")
+		log.Println(logtext)
+
 		CounterData := m.GetCounterMetricTemplate()
 		GaugeData := m.GetGaugetMetricTemplate()
 
 		files := []string{
-			"./internal/temptable.tmpl",
+			cfg.TemplateDir + "temptable.tmpl",
 		}
 
 		ts, err := template.ParseFiles(files...)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
+			log.Println("Ошибка " + err.Error() + " парсинга шаблона " + cfg.TemplateDir + "temptable.tmpl")
 			return
 		}
+
+		w.Header().Set("Content-Type", "text/html")
 
 		err = ts.Execute(w, CounterData)
 		if err != nil {
@@ -234,6 +318,24 @@ func ListMetricsChiHandleFunc(m model.Metric) http.HandlerFunc {
 		err = ts.Execute(w, GaugeData)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func PingDBChiHandleFunc(m model.Metric) http.HandlerFunc {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		logtext := "*******  PingDB " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding") + " Accept-Encoding " + r.Header.Get("Accept-Encoding")
+		log.Println(logtext)
+
+		err := m.PingContext(r.Context())
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
