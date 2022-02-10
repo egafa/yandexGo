@@ -58,6 +58,12 @@ func createTablles(db *sql.DB) error {
 		`("id" SERIAL PRIMARY KEY,` +
 		`"typename" varchar(10), "name" varchar(100), delta bigint, val numeric(40,20))`)
 
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
+
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
+
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
+
 	return err
 }
 func GetFromDatabase(db *sql.DB, typename string, name string) (RowDB, bool) {
