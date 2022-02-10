@@ -59,11 +59,11 @@ func (m MetricsDB) SaveMassiveMetric(dataMetrics []Metrics) error {
 
 		if metric.MType == "gauge" {
 			if metric.Value == nil {
-				return fmt.Errorf("Для  ID ", metric.ID, "не задано значение")
+				return fmt.Errorf("для  ID %s не задано значение", metric.ID)
 			}
 		} else {
 			if metric.Delta == nil {
-				return fmt.Errorf("Для  ID ", metric.ID, "не задано значение")
+				return fmt.Errorf("для  ID %v не задано значение", metric.ID)
 			}
 		}
 
