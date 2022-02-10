@@ -34,6 +34,7 @@ func main() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(zipcompess.DecompressHandle)
 	r.Use(zipcompess.GzipHandle)
 
 	r.Route("/", func(r chi.Router) {

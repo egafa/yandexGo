@@ -43,6 +43,21 @@ func GzipHandle(next http.Handler) http.Handler {
 	})
 }
 
+func DecompressHandle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Header.Get("Content-Encoding") == "gzip" {
+			defer r.Body.Close()
+			body, err := gzip.NewReader(r.Body)
+			if err == nil {
+				r.Body = body
+			}
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func Compress(data []byte) ([]byte, error) {
 	var b bytes.Buffer
 	// создаём переменную w — в неё будут записываться входящие данные,

@@ -12,44 +12,38 @@ import (
 
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
-	"github.com/egafa/yandexGo/zipcompess"
 	"github.com/go-chi/chi/v5"
 )
 
-func bodyData(r *http.Request, isList bool) ([]byte, model.Metrics, []model.Metrics, error) {
-	var body []byte
-	var bodyErr error
+func bodyData(r *http.Request) ([]byte, error) {
 
 	defer r.Body.Close()
-	if r.Header.Get("Content-Encoding") == "gzip" {
-		body, bodyErr = zipcompess.Decompress(r.Body)
-	} else {
-		body, bodyErr = ioutil.ReadAll(r.Body)
-	}
 
+	body, bodyErr := ioutil.ReadAll(r.Body)
 	if bodyErr != nil {
 		log.Print(" Ошибка открытия тела запроса " + bodyErr.Error())
-		return nil, model.Metrics{}, nil, bodyErr
+		return nil, bodyErr
 	}
 
-	var massiveMetrics []model.Metrics
-	dataMetrics := model.Metrics{}
+	return body, nil
+}
 
-	if isList {
-		bodyErr = json.Unmarshal(body, &massiveMetrics)
-	} else {
-		bodyErr = json.Unmarshal(body, &dataMetrics)
+func bodyMetric(r *http.Request) (model.Metrics, []byte, error) {
+
+	body, err := bodyData(r)
+	if err != nil {
+		return model.Metrics{}, nil, err
 	}
 
-	if bodyErr != nil {
-		return nil, model.Metrics{}, nil, bodyErr
+	var dataMetrics model.Metrics
+	err = json.Unmarshal(body, &dataMetrics)
+
+	if err != nil {
+		return model.Metrics{}, body, err
 	}
 
-	if isList {
-		return body, model.Metrics{}, massiveMetrics, nil
-	} else {
-		return body, dataMetrics, nil, nil
-	}
+	return dataMetrics, body, nil
+
 }
 
 func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
@@ -66,15 +60,23 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 			return
 		}
 
-		body, _, dataMetrics, err := bodyData(r, true)
+		body, err := bodyData(r)
+		if err != nil {
+			http.Error(w, "Content-Type должен быть json", http.StatusNotImplemented)
+			log.Print(logtext + " Content-Type должен быть json ")
+			return
+		}
 
-		log.Print(" Получен массив  ", dataMetrics)
+		var dataMetrics []model.Metrics
+		err = json.Unmarshal(body, &dataMetrics)
 
 		if err != nil {
 			http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 			log.Print(logtext + " Ошибка дессериализации " + err.Error() + string(body))
 			return
 		}
+
+		log.Print(" Получен массив  ", dataMetrics)
 
 		for i := 0; i < len(dataMetrics); i++ {
 			h := model.GetHash(dataMetrics[i], cfg.Key)
@@ -117,7 +119,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 			log.Println(logtext)
 
-			body, dataMetrics1, _, jsonErr := bodyData(r, false)
+			dataMetrics1, body, jsonErr := bodyMetric(r)
 
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
@@ -210,7 +212,7 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 			logtext = logtext + " ******* Json "
 			log.Println(logtext)
 
-			body, dataMetrics, _, jsonErr := bodyData(r, false)
+			dataMetrics, body, jsonErr := bodyMetric(r)
 			if jsonErr != nil {
 				http.Error(w, "Ошибка дессериализации", http.StatusNotImplemented)
 				log.Print(logtext + " Ошибка дессериализации" + string(body))
