@@ -262,7 +262,7 @@ func (m MapMetric) SetData(GaugeData map[string]float64, CounterData map[string]
 }
 
 func (m MapMetric) PingContext(ctx context.Context) error {
-	return fmt.Errorf("В этом режиме базы данных нет")
+	return fmt.Errorf("в этом режиме базы данных нет")
 }
 
 func (m MapMetric) Close() error {
