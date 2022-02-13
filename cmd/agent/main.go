@@ -23,7 +23,7 @@ import (
 	"github.com/egafa/yandexGo/zipcompess"
 
 	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/mem"
 )
 
 type dataRequest struct {
