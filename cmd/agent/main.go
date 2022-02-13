@@ -21,6 +21,9 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
 	"github.com/egafa/yandexGo/zipcompess"
+
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/v3/mem"
 )
 
 type dataRequest struct {
@@ -114,6 +117,73 @@ func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric
 					sliceMetric[0] = req
 					//log.Println("Добавление запроса ", req.addr)
 				}
+
+				dataChannel <- sliceMetric
+				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
+
+			}
+		}
+	}
+}
+
+func formMetricPUtilUpdates(ctx context.Context, cfg config.Config_Agent, dataChannel chan []dataRequest) {
+
+	urlUpdate := "http://%s/updates"
+
+	for { //i := 0; i < 60; i++
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			{
+
+				var massiveMetrics []model.Metrics
+				typename := "gauge"
+
+				v, _ := mem.VirtualMemory()
+
+				totalMemory := float64(v.Total)
+				m := model.Metrics{
+					MType: typename,
+					ID:    "TotalMemory",
+					Value: &totalMemory,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				freeMemory := float64(v.Free)
+				m = model.Metrics{
+					MType: typename,
+					ID:    "FreeMemory",
+					Value: &freeMemory,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				i, err := cpu.Counts(true)
+				if err != nil {
+					i = 0
+				}
+				cpuCounts := float64(i)
+				m = model.Metrics{
+					MType: typename,
+					ID:    "CPUutilization1",
+					Value: &cpuCounts,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				sliceMetric := make([]dataRequest, 1)
+
+				addr := fmt.Sprintf(urlUpdate, cfg.AddrServer)
+				req, err := newRequest(massiveMetrics, addr, http.MethodPost, cfg.Compress)
+				if err != nil {
+					continue
+				}
+
+				sliceMetric[0] = req
+				//log.Println("Добавление запроса ", req.addr)
 
 				dataChannel <- sliceMetric
 				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
@@ -246,6 +316,7 @@ func main() {
 
 	//go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
 	go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	go formMetricPUtilUpdates(ctx, *cfg, dataChannel)
 
 	time.Sleep(1 * time.Second)
 
