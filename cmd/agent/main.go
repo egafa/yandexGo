@@ -22,7 +22,7 @@ import (
 	"github.com/egafa/yandexGo/config"
 	"github.com/egafa/yandexGo/zipcompess"
 
-	//"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
 
@@ -161,11 +161,11 @@ func formMetricPUtilUpdates(ctx context.Context, cfg config.Config_Agent, dataCh
 				m.Hash = model.GetHash(m, cfg.Key)
 				massiveMetrics = append(massiveMetrics, m)
 
-				//i, err := cpu.Counts(true)
-				//if err != nil {
-				//	i = 0
-				//}
-				cpuCounts := 10.0 //float64(i)
+				i, err := cpu.Counts(true)
+				if err != nil {
+					i = 0
+				}
+				cpuCounts := float64(i)
 				m = model.Metrics{
 					MType: typename,
 					ID:    "CPUutilization1",
