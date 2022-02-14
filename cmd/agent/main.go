@@ -213,6 +213,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 				for j := 0; j < len(textReq); j++ {
 
 					req, errReq := http.NewRequest(textReq[j].method, textReq[j].addr, bytes.NewBuffer(textReq[j].body))
+
 					if errReq != nil {
 						log.Fatal("Не удалось сформировать запрос ", errReq)
 					}
@@ -221,6 +222,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 						req.Header.Set("Content-Encoding", "gzip")
 					}
 
+					req.Body.Close()
 					_, err := client.Do(req)
 					if err == nil {
 						//log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
