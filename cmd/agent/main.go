@@ -222,11 +222,12 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 						req.Header.Set("Content-Encoding", "gzip")
 					}
 
-					req.Body.Close()
-					_, err := client.Do(req)
+					r, err := client.Do(req)
 					if err == nil {
+						r.Body.Close()
 						//log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
 					}
+
 				}
 
 				time.Sleep(time.Duration(cfg.ReportInterval) * time.Second)
