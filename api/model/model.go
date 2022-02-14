@@ -114,9 +114,11 @@ func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
 	return mapMetricVal
 }
 
+/*
 func (m MapMetric) SetFileName(fname string) {
 	m.FileName = fname
 }
+*/
 
 func (m *MapMetric) SetFlagSave(fl bool) {
 	m.FlagSave = fl

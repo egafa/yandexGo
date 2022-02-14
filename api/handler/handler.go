@@ -48,9 +48,8 @@ func bodyMetric(r *http.Request) (model.Metrics, []byte, error) {
 
 func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var logtext string
 
-		logtext = "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
+		logtext := "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
 
 		log.Println(logtext)
 
