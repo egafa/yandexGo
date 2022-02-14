@@ -161,15 +161,18 @@ func formMetricPUtilUpdates(ctx context.Context, cfg config.Config_Agent, dataCh
 				m.Hash = model.GetHash(m, cfg.Key)
 				massiveMetrics = append(massiveMetrics, m)
 
-				i, err := cpu.Counts(true)
-				if err != nil {
-					i = 0
+				сpuf, err := cpu.Percent(0, true)
+				cpuUtilization := float64(0)
+				if err == nil {
+					for _, p := range сpuf {
+						cpuUtilization = cpuUtilization + p
+					}
 				}
-				cpuCounts := float64(i)
+
 				m = model.Metrics{
 					MType: typename,
 					ID:    "CPUutilization1",
-					Value: &cpuCounts,
+					Value: &cpuUtilization,
 				}
 				m.Hash = model.GetHash(m, cfg.Key)
 				massiveMetrics = append(massiveMetrics, m)
