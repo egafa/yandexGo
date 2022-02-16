@@ -74,7 +74,7 @@ func GetHash(m Metrics, key string) string {
 	return res
 }
 
-func NewMetric(cfg *config.Config_Server) Metric {
+func NewMetric(cfg *config.ConfigServer) Metric {
 	var mapMetric Metric
 	var err error
 
@@ -96,7 +96,7 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
-func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
+func NewMapMetricCongig(cfg *config.ConfigServer) MapMetric {
 	mapMetricVal := NewMapMetric()
 
 	if len(cfg.StoreFile) > 0 {

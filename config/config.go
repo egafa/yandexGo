@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type Config_Agent struct {
+type ConfigAgent struct {
 	AddrServer     string
 	PollInterval   int
 	ReportInterval int
@@ -17,7 +17,7 @@ type Config_Agent struct {
 	Compress       bool
 }
 
-type Config_Server struct {
+type ConfigServer struct {
 	AddrServer    string
 	StoreInterval float64
 	StoreFile     string
@@ -30,7 +30,7 @@ type Config_Server struct {
 }
 
 // LoadConfig creates a Config object that is filled with values from environment variables or set default values
-func LoadConfigAgent() *Config_Agent {
+func LoadConfigAgent() *ConfigAgent {
 
 	AddrServerEnv := "ADDRESS"
 	PollIntervalEnv := "POLLINTERVAL"
@@ -52,7 +52,7 @@ func LoadConfigAgent() *Config_Agent {
 	PollInterval, _ := time.ParseDuration(*PollIntervalStr)
 	ReportInterval, _ := time.ParseDuration(*ReportIntervalStr)
 
-	return &Config_Agent{
+	return &ConfigAgent{
 		AddrServer:     *AddrServer,
 		PollInterval:   int(PollInterval.Seconds()),
 		ReportInterval: int(ReportInterval.Seconds()),
@@ -62,7 +62,7 @@ func LoadConfigAgent() *Config_Agent {
 	}
 }
 
-func LoadConfigServer() *Config_Server {
+func LoadConfigServer() *ConfigServer {
 
 	AddrServerEnv := "ADDRESS"
 	StoreIntervalEnv := "STORE_INTERVAL"
@@ -108,7 +108,7 @@ func LoadConfigServer() *Config_Server {
 
 	StoreInterval, _ := time.ParseDuration(*StoreIntervalStr)
 
-	return &Config_Server{
+	return &ConfigServer{
 		AddrServer:    *AddrServer,
 		StoreInterval: StoreInterval.Seconds(),
 		StoreFile:     *StoreFile,

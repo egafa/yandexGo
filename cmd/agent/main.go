@@ -59,7 +59,7 @@ func newRequest(m interface{}, addr, method string, compress bool) (dataRequest,
 	return r, nil
 }
 
-func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetricUpdates(ctx context.Context, cfg config.ConfigAgent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/updates"
 
@@ -126,7 +126,7 @@ func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric
 	}
 }
 
-func formMetricPUtilUpdates(ctx context.Context, cfg config.Config_Agent, dataChannel chan []dataRequest) {
+func formMetricPUtilUpdates(ctx context.Context, cfg config.ConfigAgent, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/updates"
 
@@ -196,7 +196,7 @@ func formMetricPUtilUpdates(ctx context.Context, cfg config.Config_Agent, dataCh
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg config.Config_Agent) {
+func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg config.ConfigAgent) {
 	var textReq []dataRequest
 
 	client := &http.Client{}
@@ -242,7 +242,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 }
 
-func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetric(ctx context.Context, cfg config.ConfigAgent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 

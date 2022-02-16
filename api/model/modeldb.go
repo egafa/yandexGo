@@ -13,7 +13,7 @@ type MetricsDB struct {
 	DB *sql.DB
 }
 
-func NewMetricDB(cfg *config.Config_Server) (MetricsDB, error) {
+func NewMetricDB(cfg *config.ConfigServer) (MetricsDB, error) {
 	m := MetricsDB{}
 
 	db, err := storage.NewDB(cfg.DatabaseDSN)
