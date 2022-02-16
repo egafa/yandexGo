@@ -44,32 +44,20 @@ func NewDB(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	err = createTablles(db)
-	if err != nil {
-		log.Println("database error ", err.Error())
-		return nil, err
-	}
+	db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
+		`("id" SERIAL PRIMARY KEY,` +
+		`"typename" varchar(10), "name" varchar(100), delta bigint, val numeric(40,20))`)
+
+	db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
+
+	db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
+
+	db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
+
 	return db, nil
 
 }
 
-func createTablles(db *sql.DB) error {
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
-		`("id" SERIAL PRIMARY KEY,` +
-		`"typename" varchar(10), "name" varchar(100), delta bigint, val numeric(40,20))`)
-
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
-
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
-
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
-
-	if err != nil {
-		log.Println("database error ", err.Error())
-	}
-
-	return err
-}
 func GetFromDatabase(db *sql.DB, typename string, name string) (RowDB, bool) {
 	var qtext string
 	qtext = "select val from metrics where name = $1"
