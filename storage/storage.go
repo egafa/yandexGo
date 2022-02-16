@@ -54,19 +54,18 @@ func NewDB(dsn string) (*sql.DB, error) {
 }
 
 func createTablles(db *sql.DB) error {
-	r, err := db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
 		`("id" SERIAL PRIMARY KEY,` +
 		`"typename" varchar(10), "name" varchar(100), delta bigint, val numeric(40,20))`)
 
-	r, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
 
-	r, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
 
-	r, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
+	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
 
 	if err != nil {
-		n, _ := r.RowsAffected()
-		log.Println("database error ", err.Error(), n)
+		log.Println("database error ", err.Error())
 	}
 
 	return err
@@ -78,7 +77,7 @@ func GetFromDatabase(db *sql.DB, typename string, name string) (RowDB, bool) {
 		qtext = "select delta from metrics where name = $1"
 	}
 	rows, err := db.Query(qtext, name)
-	if err != nil {
+	if rows.Err() != nil {
 		log.Println("database error Select", err.Error())
 		return RowDB{}, false
 	}
@@ -113,7 +112,7 @@ func SaveToDatabase(db *sql.DB, r RowDB) error {
 	defer tx.Rollback()
 
 	rows, errSelect := db.Query("select name, delta from metrics where name=$1", r.Name)
-	if errSelect != nil {
+	if rows.Err() != nil {
 		log.Println("database error Select", errSelect.Error())
 		return errSelect
 	}
@@ -168,7 +167,7 @@ func GetMapData(db *sql.DB, typename string) MapData {
 		qtext = "select name, delta from metrics where typename = $1"
 	}
 	rows, err := db.Query(qtext, typename)
-	if err != nil {
+	if rows.Err() != nil {
 		log.Println("database error Select GetMapData", err.Error())
 		return MapData{}
 	}
@@ -228,6 +227,9 @@ func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
 	}
 
 	stmSelect, err := tx.Prepare("select delta from metrics where name=$1")
+	if err != nil {
+		return err
+	}
 
 	for _, v := range rows {
 
@@ -258,6 +260,9 @@ func SaveMassiveDatabase(db *sql.DB, rows []RowDB) error {
 				_, err = stmtInsert.Exec(v.MType, v.Name, nil, v.Delta)
 			}
 
+		}
+		if err != nil {
+			return err
 		}
 	}
 
