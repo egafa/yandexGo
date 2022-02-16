@@ -54,15 +54,20 @@ func NewDB(dsn string) (*sql.DB, error) {
 }
 
 func createTablles(db *sql.DB) error {
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
+	r, err := db.Exec("CREATE TABLE IF NOT EXISTS metrics " +
 		`("id" SERIAL PRIMARY KEY,` +
 		`"typename" varchar(10), "name" varchar(100), delta bigint, val numeric(40,20))`)
 
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
+	r, err = db.Exec("CREATE INDEX IF NOT EXISTS typename ON metrics (typename)")
 
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
+	r, err = db.Exec("CREATE INDEX IF NOT EXISTS name ON metrics (name)")
 
-	_, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
+	r, err = db.Exec("CREATE INDEX IF NOT EXISTS name_type ON metrics (typename, name)")
+
+	if err != nil {
+		n, _ := r.RowsAffected()
+		log.Println("database error ", err.Error(), n)
+	}
 
 	return err
 }
