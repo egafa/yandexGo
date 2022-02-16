@@ -46,11 +46,10 @@ func bodyMetric(r *http.Request) (model.Metrics, []byte, error) {
 
 }
 
-func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
+func UpdateListMetricHandlerChi(m model.Metric, cfg *config.ConfigServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var logtext string
 
-		logtext = "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
+		logtext := "******* handler updateS " + r.URL.Host + r.URL.String() + " Content-Encoding " + r.Header.Get("Content-Encoding")
 
 		log.Println(logtext)
 
@@ -101,7 +100,7 @@ func UpdateListMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.
 	}
 }
 
-func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
+func UpdateMetricHandlerChi(m model.Metric, cfg *config.ConfigServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var logtext string
 
@@ -201,7 +200,7 @@ func UpdateMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Hand
 
 }
 
-func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
+func ValueMetricHandlerChi(m model.Metric, cfg *config.ConfigServer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var logtext string
@@ -286,7 +285,7 @@ func ValueMetricHandlerChi(m model.Metric, cfg *config.Config_Server) http.Handl
 	}
 }
 
-func ListMetricsChiHandleFunc(m model.Metric, cfg *config.Config_Server) http.HandlerFunc {
+func ListMetricsChiHandleFunc(m model.Metric, cfg *config.ConfigServer) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 

@@ -99,7 +99,7 @@ func main() {
 
 }
 
-func SaveToFileTimer(ctx context.Context, m model.Metric, cfg *config.Config_Server) {
+func SaveToFileTimer(ctx context.Context, m model.Metric, cfg *config.ConfigServer) {
 	if cfg.StoreInterval == 0 {
 		return
 	}

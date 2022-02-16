@@ -21,6 +21,9 @@ import (
 	"github.com/egafa/yandexGo/api/model"
 	"github.com/egafa/yandexGo/config"
 	"github.com/egafa/yandexGo/zipcompess"
+
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
 )
 
 type dataRequest struct {
@@ -56,7 +59,7 @@ func newRequest(m interface{}, addr, method string, compress bool) (dataRequest,
 	return r, nil
 }
 
-func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetricUpdates(ctx context.Context, cfg config.ConfigAgent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/updates"
 
@@ -123,7 +126,77 @@ func formMetricUpdates(ctx context.Context, cfg config.Config_Agent, namesMetric
 	}
 }
 
-func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg config.Config_Agent) {
+func formMetricPUtilUpdates(ctx context.Context, cfg config.ConfigAgent, dataChannel chan []dataRequest) {
+
+	urlUpdate := "http://%s/updates"
+
+	for { //i := 0; i < 60; i++
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			{
+
+				var massiveMetrics []model.Metrics
+				typename := "gauge"
+
+				v, _ := mem.VirtualMemory()
+
+				totalMemory := float64(v.Total)
+				m := model.Metrics{
+					MType: typename,
+					ID:    "TotalMemory",
+					Value: &totalMemory,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				freeMemory := float64(v.Free)
+				m = model.Metrics{
+					MType: typename,
+					ID:    "FreeMemory",
+					Value: &freeMemory,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				сpuf, err := cpu.Percent(0, true)
+				cpuUtilization := float64(0)
+				if err == nil {
+					for _, p := range сpuf {
+						cpuUtilization = cpuUtilization + p
+					}
+				}
+
+				m = model.Metrics{
+					MType: typename,
+					ID:    "CPUutilization1",
+					Value: &cpuUtilization,
+				}
+				m.Hash = model.GetHash(m, cfg.Key)
+				massiveMetrics = append(massiveMetrics, m)
+
+				sliceMetric := make([]dataRequest, 1)
+
+				addr := fmt.Sprintf(urlUpdate, cfg.AddrServer)
+				req, err := newRequest(massiveMetrics, addr, http.MethodPost, cfg.Compress)
+				if err != nil {
+					continue
+				}
+
+				sliceMetric[0] = req
+				//log.Println("Добавление запроса ", req.addr)
+
+				dataChannel <- sliceMetric
+				time.Sleep(time.Duration(cfg.PollInterval) * time.Second)
+
+			}
+		}
+	}
+}
+
+func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel chan int, cfg config.ConfigAgent) {
 	var textReq []dataRequest
 
 	client := &http.Client{}
@@ -140,6 +213,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 				for j := 0; j < len(textReq); j++ {
 
 					req, errReq := http.NewRequest(textReq[j].method, textReq[j].addr, bytes.NewBuffer(textReq[j].body))
+
 					if errReq != nil {
 						log.Fatal("Не удалось сформировать запрос ", errReq)
 					}
@@ -148,10 +222,12 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 						req.Header.Set("Content-Encoding", "gzip")
 					}
 
-					_, err := client.Do(req)
+					r, err := client.Do(req)
 					if err == nil {
+						r.Body.Close()
 						//log.Println("Отправка запроса агента ", req.Method, " "+req.URL.String(), string(textReq[j].body))
 					}
+
 				}
 
 				time.Sleep(time.Duration(cfg.ReportInterval) * time.Second)
@@ -166,7 +242,7 @@ func sendMetric(ctx context.Context, dataChannel chan []dataRequest, stopchanel 
 
 }
 
-func formMetric(ctx context.Context, cfg config.Config_Agent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
+func formMetric(ctx context.Context, cfg config.ConfigAgent, namesMetric map[string]string, keysMetric []string, dataChannel chan []dataRequest) {
 
 	urlUpdate := "http://%s/update/%s/%s/%v"
 
@@ -244,8 +320,9 @@ func main() {
 
 	dataChannel := make(chan []dataRequest) //, len(namesMetric))
 
-	go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
-	//go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	//go formMetric(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	go formMetricUpdates(ctx, *cfg, namesMetric, keysMetric, dataChannel)
+	go formMetricPUtilUpdates(ctx, *cfg, dataChannel)
 
 	time.Sleep(1 * time.Second)
 

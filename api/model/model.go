@@ -74,7 +74,7 @@ func GetHash(m Metrics, key string) string {
 	return res
 }
 
-func NewMetric(cfg *config.Config_Server) Metric {
+func NewMetric(cfg *config.ConfigServer) Metric {
 	var mapMetric Metric
 	var err error
 
@@ -96,7 +96,7 @@ func NewMapMetric() MapMetric {
 	return mapMetricVal
 }
 
-func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
+func NewMapMetricCongig(cfg *config.ConfigServer) MapMetric {
 	mapMetricVal := NewMapMetric()
 
 	if len(cfg.StoreFile) > 0 {
@@ -114,9 +114,11 @@ func NewMapMetricCongig(cfg *config.Config_Server) MapMetric {
 	return mapMetricVal
 }
 
+/*
 func (m MapMetric) SetFileName(fname string) {
 	m.FileName = fname
 }
+*/
 
 func (m *MapMetric) SetFlagSave(fl bool) {
 	m.FlagSave = fl
@@ -262,7 +264,7 @@ func (m MapMetric) SetData(GaugeData map[string]float64, CounterData map[string]
 }
 
 func (m MapMetric) PingContext(ctx context.Context) error {
-	return fmt.Errorf("В этом режиме базы данных нет")
+	return fmt.Errorf("в этом режиме базы данных нет")
 }
 
 func (m MapMetric) Close() error {
